@@ -52,6 +52,11 @@ export const getCV = async (cvId) => {
   return response.data
 }
 
+export const deleteCV = async (cvId) => {
+  const response = await api.delete(`/cv/${cvId}`)
+  return response.data
+}
+
 export const healthCheck = async () => {
   const response = await api.get('/health')
   return response.data

@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
-import { Upload, History, FileText, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, History, FileText, CheckCircle, AlertCircle, Trash2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
 import ReactMarkdown from 'react-markdown'
-import { uploadCV, getCVs, getCV } from './services/api'
+import { uploadCV, getCVs, getCV, deleteCV } from './services/api'
 
 function App() {
   const [activeTab, setActiveTab] = useState('upload')
@@ -15,6 +15,16 @@ function App() {
     onSuccess: () => {
       queryClient.invalidateQueries('cvs')
       setActiveTab('history')
+    },
+  })
+
+  const deleteMutation = useMutation(deleteCV, {
+    onSuccess: () => {
+      queryClient.invalidateQueries('cvs')
+      // Clear selected CV if it was deleted
+      if (selectedCV) {
+        setSelectedCV(null)
+      }
     },
   })
 
@@ -31,6 +41,13 @@ function App() {
       setSelectedCV(cv)
     } catch (error) {
       console.error('Error fetching CV details:', error)
+    }
+  }
+
+  const handleDeleteCV = (cvId, event) => {
+    event.stopPropagation() // Prevent triggering the CV selection
+    if (window.confirm('Are you sure you want to delete this CV?')) {
+      deleteMutation.mutate(cvId)
     }
   }
 
@@ -84,6 +101,8 @@ function App() {
             cvsLoading={cvsLoading}
             selectedCV={selectedCV}
             onCVSelect={handleCVSelect}
+            onDeleteCV={handleDeleteCV}
+            isDeleting={deleteMutation.isLoading}
           />
         )}
       </main>
@@ -166,7 +185,7 @@ function UploadTab({ uploadMutation, handleFileUpload }) {
   )
 }
 
-function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect }) {
+function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect, onDeleteCV, isDeleting }) {
   if (cvsLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -204,7 +223,17 @@ function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect }) {
                         {(cv.file_size / 1024).toFixed(1)} KB
                       </p>
                     </div>
-                    <FileText className="h-4 w-4 text-gray-400" />
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-gray-400" />
+                      <button
+                        onClick={(e) => onDeleteCV(cv.id, e)}
+                        disabled={isDeleting}
+                        className="p-1 hover:bg-red-100 rounded transition-colors group"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4 text-gray-400 group-hover:text-red-600" />
+                      </button>
+                    </div>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     {new Date(cv.upload_time).toLocaleDateString()}

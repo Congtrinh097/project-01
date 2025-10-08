@@ -157,6 +157,30 @@ async def list_cvs(db: Session = Depends(get_db)):
         for cv in cvs
     ]
 
+@app.delete("/cv/{cv_id}")
+async def delete_cv(cv_id: int, db: Session = Depends(get_db)):
+    """
+    Delete a CV by ID
+    """
+    cv = db.query(CV).filter(CV.id == cv_id).first()
+    if not cv:
+        raise HTTPException(status_code=404, detail="CV not found")
+    
+    # Delete the physical file if it exists
+    if cv.file_path and os.path.exists(cv.file_path):
+        try:
+            os.remove(cv.file_path)
+            logger.info(f"Deleted file: {cv.file_path}")
+        except Exception as e:
+            logger.error(f"Error deleting file {cv.file_path}: {str(e)}")
+    
+    # Delete from database
+    db.delete(cv)
+    db.commit()
+    
+    logger.info(f"CV deleted successfully: {cv_id}")
+    return {"message": "CV deleted successfully", "id": cv_id}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
