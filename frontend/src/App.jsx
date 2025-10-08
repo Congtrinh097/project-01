@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Upload, History, FileText, CheckCircle, AlertCircle } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
+import ReactMarkdown from 'react-markdown'
 import { uploadCV, getCVs, getCV } from './services/api'
 
 function App() {
@@ -232,9 +233,11 @@ function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect }) {
                     <h4 className="font-medium text-gray-900">Strengths</h4>
                   </div>
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p className="text-sm text-gray-700 whitespace-pre-line">
-                      {selectedCV.summary_pros || 'No strengths identified.'}
-                    </p>
+                    <div className="markdown-content">
+                      <ReactMarkdown>
+                        {selectedCV.summary_pros || 'No strengths identified.'}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
 
@@ -245,9 +248,11 @@ function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect }) {
                     <h4 className="font-medium text-gray-900">Areas for Improvement</h4>
                   </div>
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <p className="text-sm text-gray-700 whitespace-pre-line">
-                      {selectedCV.summary_cons || 'No areas for improvement identified.'}
-                    </p>
+                    <div className="markdown-content">
+                      <ReactMarkdown>
+                        {selectedCV.summary_cons || 'No areas for improvement identified.'}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               </div>

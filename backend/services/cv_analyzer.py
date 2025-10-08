@@ -61,13 +61,23 @@ Please analyze the following CV and provide a structured response with strengths
 CV Content:
 {cv_text[:4000]}  # Limit to avoid token limits
 
-Please format your response exactly as follows:
+Please format your response exactly as follows using markdown formatting:
 
-STRENGTHS:
-- [List key strengths and positive aspects]
+**Strengths:**
+- **Relevant Experience**: [Description of experience alignment]
+- **Technical Proficiency**: [Description of technical skills]
+- **Quantifiable Achievements**: [Description of measurable accomplishments]
+- **Diverse Skill Set**: [Description of additional skills]
+- **Project Experience**: [Description of relevant projects]
+- **Recognition**: [Description of awards or recognition]
 
-AREAS FOR IMPROVEMENT:
-- [List constructive suggestions and areas to develop]
+**Areas for Improvement:**
+- **Education Section**: [Suggestions for education presentation]
+- **Certifications**: [Recommendations for certifications]
+- **Career Progression**: [Suggestions for career narrative]
+- **Communication Skills**: [Recommendations for soft skills]
+- **Formatting and Structure**: [Suggestions for CV layout]
+- **Language Proficiency**: [Recommendations for language skills]
 
 Focus on:
 - Skills and experience relevance
@@ -77,12 +87,12 @@ Focus on:
 - Communication and presentation
 - Overall structure and completeness
 
-Be constructive and specific in your feedback.
+Be constructive and specific in your feedback. Use markdown formatting with **bold** text for section headers and bullet points for detailed descriptions.
 """
     
     def _parse_analysis_response(self, response_text: str) -> tuple[str, str]:
         """
-        Parse the OpenAI response to extract pros and cons
+        Parse the OpenAI response to extract pros and cons with markdown formatting
         """
         try:
             lines = response_text.split('\n')
@@ -95,17 +105,25 @@ Be constructive and specific in your feedback.
                 if not line:
                     continue
                 
-                if line.upper().startswith('STRENGTHS'):
+                # Check for section headers (markdown bold format)
+                if line.upper().startswith('**STRENGTHS**') or line.upper().startswith('STRENGTHS'):
                     current_section = 'pros'
                     continue
-                elif line.upper().startswith(('AREAS FOR IMPROVEMENT', 'WEAKNESSES', 'CONS')):
+                elif line.upper().startswith(('**AREAS FOR IMPROVEMENT**', '**WEAKNESSES**', '**CONS**', 'AREAS FOR IMPROVEMENT', 'WEAKNESSES', 'CONS')):
                     current_section = 'cons'
                     continue
                 elif line.startswith('-') and current_section:
+                    # Keep the markdown formatting intact
                     if current_section == 'pros':
-                        pros_lines.append(line[1:].strip())
+                        pros_lines.append(line)
                     elif current_section == 'cons':
-                        cons_lines.append(line[1:].strip())
+                        cons_lines.append(line)
+                elif current_section and line and not line.startswith('**') and not line.startswith('Focus on'):
+                    # Handle content that's part of the current section but not bullet points
+                    if current_section == 'pros':
+                        pros_lines.append(f"- {line}")
+                    elif current_section == 'cons':
+                        cons_lines.append(f"- {line}")
             
             pros = '\n'.join(pros_lines) if pros_lines else "No specific strengths identified."
             cons = '\n'.join(cons_lines) if cons_lines else "No specific areas for improvement identified."
