@@ -105,14 +105,16 @@ Be constructive and specific in your feedback. Use markdown formatting with **bo
                 if not line:
                     continue
                 
-                # Check for section headers (markdown bold format)
-                if line.upper().startswith('**STRENGTHS**') or line.upper().startswith('STRENGTHS'):
+                line_upper = line.upper().replace('*', '').replace(':', '')
+                
+                # Check for section headers - more flexible matching
+                if 'STRENGTH' in line_upper or 'PROS' in line_upper:
                     current_section = 'pros'
                     continue
-                elif line.upper().startswith(('**AREAS FOR IMPROVEMENT**', '**WEAKNESSES**', '**CONS**', 'AREAS FOR IMPROVEMENT', 'WEAKNESSES', 'CONS')):
+                elif any(keyword in line_upper for keyword in ['IMPROVEMENT', 'WEAKNESS', 'CONS', 'AREAS FOR']):
                     current_section = 'cons'
                     continue
-                elif line.startswith('-') and current_section:
+                elif line.startswith(('-', '•', '*')) and current_section:
                     # Keep the markdown formatting intact
                     if current_section == 'pros':
                         pros_lines.append(line)
