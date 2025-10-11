@@ -24,3 +24,27 @@ class CVListResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+# Resume Schemas
+class ResumeGenerateRequest(BaseModel):
+    input_text: str
+
+class ResumeResponse(BaseModel):
+    id: int
+    generated_text: str
+    pdf_filename: str
+    download_url: str
+    file_size: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class ResumeListResponse(BaseModel):
+    id: int
+    pdf_filename: str
+    file_size: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True

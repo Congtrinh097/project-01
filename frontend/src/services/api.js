@@ -62,3 +62,30 @@ export const healthCheck = async () => {
   return response.data
 }
 
+// Resume generation API calls
+export const generateResume = async (inputText) => {
+  const response = await api.post('/generate-resume', {
+    input_text: inputText,
+  })
+  return response.data
+}
+
+export const getResumes = async () => {
+  const response = await api.get('/resumes')
+  return response.data
+}
+
+export const getResume = async (resumeId) => {
+  const response = await api.get(`/resumes/${resumeId}`)
+  return response.data
+}
+
+export const downloadResume = (resumeId) => {
+  return `${API_BASE_URL}/download-resume/${resumeId}`
+}
+
+export const deleteResume = async (resumeId) => {
+  const response = await api.delete(`/resumes/${resumeId}`)
+  return response.data
+}
+

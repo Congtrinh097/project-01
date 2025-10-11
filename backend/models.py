@@ -16,3 +16,17 @@ class CV(Base):
     def __repr__(self):
         return f"<CV(id={self.id}, filename='{self.filename}')>"
 
+
+class Resume(Base):
+    __tablename__ = "resumes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    input_text = Column(Text, nullable=False)
+    generated_text = Column(Text, nullable=False)
+    pdf_path = Column(String(500), nullable=False)
+    pdf_filename = Column(String(255), nullable=False)
+    file_size = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    def __repr__(self):
+        return f"<Resume(id={self.id}, filename='{self.pdf_filename}')>"

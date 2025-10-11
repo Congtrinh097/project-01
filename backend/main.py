@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List
 import os
@@ -7,10 +8,12 @@ import logging
 from datetime import datetime
 
 from database import get_db, engine
-from models import Base, CV
-from schemas import CVResponse, CVListResponse
+from models import Base, CV, Resume
+from schemas import CVResponse, CVListResponse, ResumeGenerateRequest, ResumeResponse, ResumeListResponse
 from services.cv_analyzer import CVAnalyzer
 from services.file_processor import FileProcessor
+from services.resume_generator import ResumeGenerator
+from services.pdf_generator import PDFGenerator
 from config import settings
 
 # Configure logging
@@ -38,6 +41,8 @@ app.add_middleware(
 # Initialize services
 cv_analyzer = CVAnalyzer()
 file_processor = FileProcessor()
+resume_generator = ResumeGenerator()
+pdf_generator = PDFGenerator()
 
 @app.get("/")
 async def root():
@@ -180,6 +185,170 @@ async def delete_cv(cv_id: int, db: Session = Depends(get_db)):
     
     logger.info(f"CV deleted successfully: {cv_id}")
     return {"message": "CV deleted successfully", "id": cv_id}
+
+
+# ============================================================================
+# RESUME GENERATION ENDPOINTS
+# ============================================================================
+
+@app.post("/generate-resume", response_model=ResumeResponse)
+async def generate_resume(
+    request: ResumeGenerateRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Generate a professional resume from input text and return PDF download link
+    """
+    try:
+        if not request.input_text or not request.input_text.strip():
+            raise HTTPException(status_code=400, detail="Input text cannot be empty")
+        
+        # Generate resume text using LLaMA or Mock model
+        logger.info("Generating resume text...")
+        resume_text = resume_generator.generate_from_text(
+            text=request.input_text,
+            max_tokens=1000,
+            temperature=0.2
+        )
+        
+        if not resume_text.strip():
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to generate resume text"
+            )
+        
+        # Generate PDF from resume text
+        logger.info("Generating PDF...")
+        pdf_path = pdf_generator.text_to_pdf(resume_text)
+        
+        if not os.path.exists(pdf_path):
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to generate PDF file"
+            )
+        
+        # Get file size
+        file_size = os.path.getsize(pdf_path)
+        pdf_filename = os.path.basename(pdf_path)
+        
+        # Save to database
+        resume_record = Resume(
+            input_text=request.input_text,
+            generated_text=resume_text,
+            pdf_path=pdf_path,
+            pdf_filename=pdf_filename,
+            file_size=file_size,
+            created_at=datetime.utcnow()
+        )
+        
+        db.add(resume_record)
+        db.commit()
+        db.refresh(resume_record)
+        
+        logger.info(f"Resume generated successfully: {resume_record.id}")
+        
+        # Create download URL
+        download_url = f"/download-resume/{resume_record.id}"
+        
+        return ResumeResponse(
+            id=resume_record.id,
+            generated_text=resume_record.generated_text,
+            pdf_filename=resume_record.pdf_filename,
+            download_url=download_url,
+            file_size=resume_record.file_size,
+            created_at=resume_record.created_at
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating resume: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.get("/resumes", response_model=List[ResumeListResponse])
+async def list_resumes(db: Session = Depends(get_db)):
+    """
+    List all generated resumes
+    """
+    resumes = db.query(Resume).order_by(Resume.created_at.desc()).all()
+    
+    return [
+        ResumeListResponse(
+            id=resume.id,
+            pdf_filename=resume.pdf_filename,
+            file_size=resume.file_size,
+            created_at=resume.created_at
+        )
+        for resume in resumes
+    ]
+
+
+@app.get("/resumes/{resume_id}", response_model=ResumeResponse)
+async def get_resume(resume_id: int, db: Session = Depends(get_db)):
+    """
+    Get a specific resume by ID
+    """
+    resume = db.query(Resume).filter(Resume.id == resume_id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    
+    download_url = f"/download-resume/{resume.id}"
+    
+    return ResumeResponse(
+        id=resume.id,
+        generated_text=resume.generated_text,
+        pdf_filename=resume.pdf_filename,
+        download_url=download_url,
+        file_size=resume.file_size,
+        created_at=resume.created_at
+    )
+
+
+@app.get("/download-resume/{resume_id}")
+async def download_resume(resume_id: int, db: Session = Depends(get_db)):
+    """
+    Download the PDF file for a generated resume
+    """
+    resume = db.query(Resume).filter(Resume.id == resume_id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    
+    if not os.path.exists(resume.pdf_path):
+        logger.error(f"PDF file not found: {resume.pdf_path}")
+        raise HTTPException(status_code=404, detail="PDF file not found")
+    
+    return FileResponse(
+        path=resume.pdf_path,
+        media_type='application/pdf',
+        filename=resume.pdf_filename
+    )
+
+
+@app.delete("/resumes/{resume_id}")
+async def delete_resume(resume_id: int, db: Session = Depends(get_db)):
+    """
+    Delete a resume by ID
+    """
+    resume = db.query(Resume).filter(Resume.id == resume_id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    
+    # Delete the physical PDF file if it exists
+    if resume.pdf_path and os.path.exists(resume.pdf_path):
+        try:
+            os.remove(resume.pdf_path)
+            logger.info(f"Deleted PDF file: {resume.pdf_path}")
+        except Exception as e:
+            logger.error(f"Error deleting PDF file {resume.pdf_path}: {str(e)}")
+    
+    # Delete from database
+    db.delete(resume)
+    db.commit()
+    
+    logger.info(f"Resume deleted successfully: {resume_id}")
+    return {"message": "Resume deleted successfully", "id": resume_id}
+
 
 if __name__ == "__main__":
     import uvicorn

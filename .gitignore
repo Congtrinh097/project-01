@@ -105,3 +105,10 @@ tmp/
 temp/
 uploads/
 
+# Models directory (large model files)
+models/
+
+# Generated outputs
+backend/outputs/resumes/
+backend/outputs/analyses/
+
