@@ -89,3 +89,17 @@ export const deleteResume = async (resumeId) => {
   return response.data
 }
 
+// Chatbot API calls
+export const sendChatMessage = async (message, conversationHistory = []) => {
+  const response = await api.post('/chatbot', {
+    message,
+    conversation_history: conversationHistory,
+  })
+  return response.data
+}
+
+export const chatbotHealthCheck = async () => {
+  const response = await api.get('/chatbot/health')
+  return response.data
+}
+

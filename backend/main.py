@@ -9,11 +9,12 @@ from datetime import datetime
 
 from database import get_db, engine
 from models import Base, CV, Resume
-from schemas import CVResponse, CVListResponse, ResumeGenerateRequest, ResumeResponse, ResumeListResponse
+from schemas import CVResponse, CVListResponse, ResumeGenerateRequest, ResumeResponse, ResumeListResponse, ChatRequest, ChatResponse
 from services.cv_analyzer import CVAnalyzer
 from services.file_processor import FileProcessor
 from services.resume_generator import ResumeGenerator
 from services.pdf_generator import PDFGenerator
+from services.chatbot import InterviewChatbot
 from config import settings
 
 # Configure logging
@@ -43,6 +44,7 @@ cv_analyzer = CVAnalyzer()
 file_processor = FileProcessor()
 resume_generator = ResumeGenerator()
 pdf_generator = PDFGenerator()
+chatbot = InterviewChatbot()
 
 @app.get("/")
 async def root():
@@ -348,6 +350,59 @@ async def delete_resume(resume_id: int, db: Session = Depends(get_db)):
     
     logger.info(f"Resume deleted successfully: {resume_id}")
     return {"message": "Resume deleted successfully", "id": resume_id}
+
+
+# ============================================================================
+# CHATBOT ENDPOINTS
+# ============================================================================
+
+@app.post("/chatbot", response_model=ChatResponse)
+async def chat(request: ChatRequest):
+    """
+    Send a message to the interview practice chatbot and get a response
+    """
+    try:
+        if not request.message or not request.message.strip():
+            raise HTTPException(status_code=400, detail="Message cannot be empty")
+        
+        # Convert conversation history to the format expected by the chatbot
+        conversation_history = []
+        if request.conversation_history:
+            conversation_history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in request.conversation_history
+            ]
+        
+        # Get response from chatbot
+        logger.info(f"Processing chat message: {request.message[:50]}...")
+        response_text = chatbot.get_response(
+            user_input=request.message,
+            conversation_history=conversation_history
+        )
+        
+        return ChatResponse(
+            response=response_text,
+            timestamp=datetime.utcnow()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in chatbot endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.get("/chatbot/health")
+async def chatbot_health_check():
+    """
+    Check if the chatbot service is properly configured
+    """
+    is_configured = chatbot.client is not None
+    return {
+        "status": "configured" if is_configured else "not_configured",
+        "message": "Chatbot is ready" if is_configured else "OpenAI API key not configured",
+        "model": chatbot.model_name if is_configured else None
+    }
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 class CVBase(BaseModel):
     filename: str
@@ -48,3 +48,17 @@ class ResumeListResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+# Chatbot Schemas
+class ChatMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+class ChatRequest(BaseModel):
+    message: str
+    conversation_history: Optional[List[ChatMessage]] = []
+
+class ChatResponse(BaseModel):
+    response: str
+    timestamp: datetime

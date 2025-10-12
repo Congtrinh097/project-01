@@ -24,6 +24,11 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/cv_analyzer
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://aiportalapi.stu-platform.live/jpe}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - CHATBOT_MAX_TOKENS=${CHATBOT_MAX_TOKENS:-500}
+      - CHATBOT_TEMPERATURE=${CHATBOT_TEMPERATURE:-0.7}
+      - CHATBOT_MAX_HISTORY=${CHATBOT_MAX_HISTORY:-10}
       - UPLOAD_DIR=/tmp/uploads
     volumes:
       - ./backend:/app
