@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { MessageCircle, Send } from 'lucide-react'
+import { MessageCircle, Send, Plus, Mic, ArrowUp } from 'lucide-react'
 import { useMutation } from 'react-query'
 import { sendChatMessage } from '../services/api'
 
@@ -203,42 +203,60 @@ function ChatbotTab() {
         </div>
 
         {/* Chat Input */}
-        <div className="border-t border-gray-200 bg-white p-4 flex-shrink-0">
-          <form onSubmit={handleSendMessage} className="flex items-end space-x-3">
-            <div className="flex-1">
-              <textarea
-                ref={inputRef}
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    handleSendMessage(e)
-                  }
-                }}
-                placeholder="Nhập câu trả lời hoặc vị trí công việc của bạn..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
-                rows={3}
-                disabled={chatMutation.isLoading}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Nhấn Enter để gửi, Shift + Enter để xuống dòng
-              </p>
+        <div className="border-t border-gray-200 bg-white p-6 flex-shrink-0">
+          <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto">
+            <div className="relative">
+              <div className="flex items-center bg-white border border-gray-200 rounded-full shadow-sm hover:shadow-md transition-shadow duration-200">
+                {/* Text Input */}
+                <div className="flex-1 px-6">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleSendMessage(e)
+                      }
+                    }}
+                    placeholder="Ask anything"
+                    className="w-full py-4 text-gray-900 placeholder-gray-500 bg-transparent border-none outline-none text-base"
+                    disabled={chatMutation.isLoading}
+                  />
+                </div>
+                
+                {/* Microphone Icon */}
+                <button
+                  type="button"
+                  className="p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                  title="Voice input"
+                >
+                  <Mic className="h-5 w-5" />
+                </button>
+                
+                {/* Send Button - Circular */}
+                <button
+                  type="submit"
+                  disabled={!inputMessage.trim() || chatMutation.isLoading}
+                  className={`ml-2 mr-2 p-3 rounded-full transition-all duration-200 flex items-center justify-center ${
+                    inputMessage.trim() && !chatMutation.isLoading
+                      ? 'bg-primary-600 hover:bg-primary-700 text-white shadow-md hover:shadow-lg'
+                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  }`}
+                  title="Send message"
+                >
+                  {chatMutation.isLoading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    <ArrowUp className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
-            <button
-              type="submit"
-              disabled={!inputMessage.trim() || chatMutation.isLoading}
-              className="btn btn-primary px-6 py-3 w-24 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-            >
-              {chatMutation.isLoading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              ) : (
-                <>
-                  <Send className="h-5 w-5 mr-2" />
-                  Gửi
-                </>
-              )}
-            </button>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              Nhấn Enter để gửi
+            </p>
           </form>
         </div>
       </div>
