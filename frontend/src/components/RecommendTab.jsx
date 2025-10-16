@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Search, Sparkles, FileText, TrendingUp, Loader2, AlertCircle } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 
 const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
   const [query, setQuery] = useState('')
@@ -33,18 +34,15 @@ const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
             <label htmlFor="query" className="block text-sm font-medium text-gray-700 mb-2">
               Search Query
             </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <textarea
-                id="query"
-                rows="3"
-                className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
-                placeholder="e.g., Looking for a senior software engineer with 5+ years of Python and React experience, strong communication skills..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
+            <textarea
+              id="query"
+              rows="3"
+              className="block w-full px-4 py-3 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-200 transition-colors duration-200 text-sm placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500"
+              placeholder="e.g., Looking for a senior software engineer with 5+ years of Python and React experience, strong communication skills..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              disabled={isLoading}
+            />
             <p className="mt-2 text-sm text-gray-500">
               Describe the ideal candidate using natural language. Be specific about skills, experience, and qualifications.
             </p>
@@ -57,7 +55,7 @@ const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
               </label>
               <select
                 id="limit"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
+                className="block w-[100px] px-3 py-2 rounded-lg border border-gray-300 shadow-sm focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-200 transition-colors duration-200 text-sm disabled:bg-gray-50 disabled:text-gray-500"
                 value={limit}
                 onChange={(e) => setLimit(Number(e.target.value))}
                 disabled={isLoading}
@@ -111,8 +109,8 @@ const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
                 <Sparkles className="h-5 w-5 text-purple-600 mt-1 mr-2 flex-shrink-0" />
                 <h3 className="text-lg font-semibold text-gray-900">AI Recommendation</h3>
               </div>
-              <div className="prose prose-sm max-w-none">
-                <p className="text-gray-700 whitespace-pre-line">{results.ai_recommendation}</p>
+              <div className="prose prose-sm max-w-none markdown-content">
+                <ReactMarkdown>{results.ai_recommendation}</ReactMarkdown>
               </div>
             </div>
           )}
@@ -173,10 +171,10 @@ const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
                     {result.summary_pros && (
                       <div className="mt-3">
                         <h5 className="text-sm font-medium text-gray-700 mb-2">Key Strengths:</h5>
-                        <div className="text-sm text-gray-600 prose prose-sm max-w-none">
-                          {result.summary_pros.split('\n').slice(0, 3).map((line, i) => (
-                            <p key={i} className="mb-1">{line}</p>
-                          ))}
+                        <div className="text-sm text-gray-600 prose prose-sm max-w-none markdown-content">
+                          <ReactMarkdown>
+                            {result.summary_pros.split('\n').slice(0, 5).join('\n')}
+                          </ReactMarkdown>
                         </div>
                       </div>
                     )}
