@@ -103,3 +103,12 @@ export const chatbotHealthCheck = async () => {
   return response.data
 }
 
+// CV Recommendation API calls
+export const recommendCVs = async (query, limit = 5) => {
+  const response = await api.post('/cv/recommend', {
+    query,
+    limit,
+  })
+  return response.data
+}
+

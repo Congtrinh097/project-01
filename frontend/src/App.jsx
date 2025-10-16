@@ -1,18 +1,20 @@
 import React, { useState } from 'react'
-import { Upload, History, FileText, MessageCircle, FileEdit } from 'lucide-react'
+import { Upload, History, FileText, MessageCircle, FileEdit, Sparkles } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from 'react-query'
-import { uploadCV, getCVs, getCV, deleteCV, generateResume, getResumes, deleteResume } from './services/api'
+import { uploadCV, getCVs, getCV, deleteCV, generateResume, getResumes, deleteResume, recommendCVs } from './services/api'
 
 // Import tab components
 import UploadTab from './components/UploadTab'
 import GenerateResumeTab from './components/GenerateResumeTab'
 import HistoryTab from './components/HistoryTab'
 import ChatbotTab from './components/ChatbotTab'
+import RecommendTab from './components/RecommendTab'
 
 function App() {
   const [activeTab, setActiveTab] = useState('upload')
   const [selectedCV, setSelectedCV] = useState(null)
   const [selectedResume, setSelectedResume] = useState(null)
+  const [recommendResults, setRecommendResults] = useState(null)
   const queryClient = useQueryClient()
 
   const { data: cvs = [], isLoading: cvsLoading } = useQuery('cvs', getCVs)
@@ -51,6 +53,15 @@ function App() {
     },
   })
 
+  const recommendMutation = useMutation(
+    ({ query, limit }) => recommendCVs(query, limit),
+    {
+      onSuccess: (data) => {
+        setRecommendResults(data)
+      },
+    }
+  )
+
   const handleFileUpload = (event) => {
     const file = event.target.files[0]
     if (file) {
@@ -85,6 +96,11 @@ function App() {
     }
   }
 
+  const handleRecommend = (query, limit) => {
+    setRecommendResults(null) // Clear previous results
+    recommendMutation.mutate({ query, limit })
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -96,6 +112,17 @@ function App() {
               <h1 className="ml-2 text-xl font-bold text-gray-900">CV Analyzer</h1>
             </div>
             <div className="flex space-x-4">
+              <button
+                onClick={() => setActiveTab('recommend')}
+                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
+                  activeTab === 'recommend'
+                    ? 'bg-primary-100 text-primary-700'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Recommend
+              </button>
               <button
                 onClick={() => setActiveTab('chatbot')}
                 className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
@@ -176,6 +203,15 @@ function App() {
 
         {activeTab === 'chatbot' && (
           <ChatbotTab />
+        )}
+
+        {activeTab === 'recommend' && (
+          <RecommendTab 
+            onRecommend={handleRecommend}
+            isLoading={recommendMutation.isLoading}
+            error={recommendMutation.error?.response?.data?.detail || recommendMutation.error?.message}
+            results={recommendResults}
+          />
         )}
       </main>
     </div>

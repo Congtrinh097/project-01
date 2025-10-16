@@ -2,13 +2,14 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15
+    image: pgvector/pgvector:pg15
     environment:
       POSTGRES_DB: cv_analyzer
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     healthcheck:
@@ -24,6 +25,7 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/cv_analyzer
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_EMBED_API_KEY=${OPENAI_EMBED_API_KEY:-}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://aiportalapi.stu-platform.live/jpe}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
       - CHATBOT_MAX_TOKENS=${CHATBOT_MAX_TOKENS:-500}
@@ -33,7 +35,7 @@ services:
     volumes:
       - ./backend:/app
       - uploads_data:/tmp/uploads
-      - ./models:/models
+      - ./models:/app/models
     depends_on:
       postgres:
         condition: service_healthy

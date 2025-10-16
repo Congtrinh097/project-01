@@ -62,3 +62,22 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     timestamp: datetime
+
+
+# CV Recommendation Schemas
+class CVRecommendRequest(BaseModel):
+    query: str
+    limit: Optional[int] = 5
+
+class CVRecommendResult(BaseModel):
+    id: int
+    filename: str
+    similarity_score: float
+    text_preview: str
+    summary_pros: Optional[str] = None
+    upload_time: Optional[str] = None
+
+class CVRecommendResponse(BaseModel):
+    query: str
+    results: List[CVRecommendResult]
+    ai_recommendation: str

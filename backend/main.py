@@ -9,12 +9,13 @@ from datetime import datetime
 
 from database import get_db, engine
 from models import Base, CV, Resume
-from schemas import CVResponse, CVListResponse, ResumeGenerateRequest, ResumeResponse, ResumeListResponse, ChatRequest, ChatResponse
+from schemas import CVResponse, CVListResponse, ResumeGenerateRequest, ResumeResponse, ResumeListResponse, ChatRequest, ChatResponse, CVRecommendRequest, CVRecommendResponse
 from services.cv_analyzer import CVAnalyzer
 from services.file_processor import FileProcessor
 from services.resume_generator import ResumeGenerator
 from services.pdf_generator import PDFGenerator
 from services.chatbot import InterviewChatbot
+from services.cv_recommender import CVRecommender
 from config import settings
 
 # Configure logging
@@ -45,6 +46,7 @@ file_processor = FileProcessor()
 resume_generator = ResumeGenerator()
 pdf_generator = PDFGenerator()
 chatbot = InterviewChatbot()
+cv_recommender = CVRecommender()
 
 @app.get("/")
 async def root():
@@ -98,6 +100,14 @@ async def upload_cv(
         logger.info(f"Analyzing CV: {file.filename}")
         analysis_result = await cv_analyzer.analyze_cv(extracted_text)
         
+        # Generate embedding for the CV text
+        logger.info("Generating embedding for CV...")
+        try:
+            embedding = cv_recommender.generate_embedding(extracted_text)
+        except Exception as e:
+            logger.warning(f"Failed to generate embedding: {str(e)}")
+            embedding = None
+        
         # Save to database
         cv_record = CV(
             filename=file.filename,
@@ -105,7 +115,9 @@ async def upload_cv(
             file_size=len(file_content),
             upload_time=datetime.utcnow(),
             summary_pros=analysis_result.get("pros", ""),
-            summary_cons=analysis_result.get("cons", "")
+            summary_cons=analysis_result.get("cons", ""),
+            extracted_text=extracted_text,
+            embedding=embedding
         )
         
         db.add(cv_record)
@@ -187,6 +199,47 @@ async def delete_cv(cv_id: int, db: Session = Depends(get_db)):
     
     logger.info(f"CV deleted successfully: {cv_id}")
     return {"message": "CV deleted successfully", "id": cv_id}
+
+
+# ============================================================================
+# CV RECOMMENDATION ENDPOINTS
+# ============================================================================
+
+@app.post("/cv/recommend", response_model=CVRecommendResponse)
+async def recommend_cvs(
+    request: CVRecommendRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Semantic search for CVs based on a natural language query.
+    Uses vector embeddings and AI to find and recommend the most relevant candidates.
+    """
+    try:
+        if not request.query or not request.query.strip():
+            raise HTTPException(status_code=400, detail="Query cannot be empty")
+        
+        # Validate limit
+        limit = min(max(1, request.limit), 20)  # Between 1 and 20
+        
+        # Perform search and generate recommendation
+        logger.info(f"Processing recommendation request: {request.query[:100]}")
+        result = cv_recommender.search_and_recommend(
+            query=request.query,
+            db=db,
+            limit=limit
+        )
+        
+        return CVRecommendResponse(
+            query=result["query"],
+            results=result["results"],
+            ai_recommendation=result["ai_recommendation"]
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in CV recommendation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 # ============================================================================

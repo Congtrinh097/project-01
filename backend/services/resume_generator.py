@@ -188,7 +188,7 @@ class ResumeGenerator:
 
     def _initialize_model(self):
         """Initialize the appropriate model (LLaMA or Mock)"""
-        model_path = os.environ.get("MODEL_PATH", "./models/llama-2-7b-chat.Q4_K_M.gguf")
+        model_path = os.environ.get("MODEL_PATH", "../models/llama-2-7b-chat.Q4_K_M.gguf")
         
         try:
             if _LLAMA_AVAILABLE and os.path.exists(model_path):

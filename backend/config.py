@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     
     # OpenAI
     OPENAI_API_KEY: str = ""
+    OPENAI_EMBED_API_KEY: str = ""  # Separate key for embeddings (falls back to OPENAI_API_KEY if not set)
     
     # File upload settings
     UPLOAD_DIR: str = "/tmp/uploads"
