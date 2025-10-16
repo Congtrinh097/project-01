@@ -1,0 +1,168 @@
+# Cursor AI Rules for CV Analyzer Project
+
+## Project Overview
+This is a full-stack CV Analyzer application that uses AI to analyze resumes and provide recommendations.
+
+**Tech Stack:**
+- Backend: Python 3.11, FastAPI, SQLAlchemy, PostgreSQL with pgvector
+- Frontend: React 18, Vite, TailwindCSS, React Query
+- AI: OpenAI GPT-4o-mini, embeddings for semantic search
+- Infrastructure: Docker, Docker Compose
+
+## Code Style & Standards
+
+### Python (Backend)
+- Follow PEP 8 style guide
+- Use type hints for function parameters and return values
+- Use async/await for all database and API operations
+- Keep functions focused and single-purpose
+- Use Pydantic models for request/response validation
+- Handle exceptions properly with appropriate HTTP status codes
+
+### JavaScript/React (Frontend)
+- Use functional components with hooks
+- Follow React best practices and hooks rules
+- Use Tailwind utility classes for styling
+- Keep components small and reusable
+- Use proper error boundaries and error handling
+- Prefer async/await over promise chains
+
+### Database
+- Use SQLAlchemy ORM models
+- Always use parameterized queries (no string interpolation)
+- Use Alembic-style migrations in /backend/migrations/
+- Leverage pgvector for semantic search with embeddings
+
+### Docker
+- Keep Dockerfiles optimized (multi-stage builds where appropriate)
+- Use specific version tags, not 'latest'
+- Minimize layers and image size
+
+## File Organization
+- Backend code in `/backend/`
+- Frontend code in `/frontend/`
+- Documentation in `/docs/`
+- Keep README.md in root
+- Store models in `/models/`
+- Database migrations in `/backend/migrations/`
+
+## Naming Conventions
+- Python: snake_case for functions, variables, files
+- React: PascalCase for components, camelCase for functions/variables
+- Database: snake_case for tables and columns
+- API endpoints: kebab-case in URLs
+
+## AI Integration Guidelines
+- Use OpenAI GPT-4o-mini for text analysis
+- Generate embeddings for semantic search
+- Store embeddings in PostgreSQL with pgvector
+- Always handle AI API errors gracefully
+- Implement proper rate limiting and retry logic
+- Cache AI responses when appropriate
+
+## Security Best Practices
+- Never commit API keys or secrets
+- Use environment variables for sensitive data
+- Validate all user inputs
+- Sanitize file uploads (PDF, DOCX only, max 10MB)
+- Use CORS properly
+- Implement proper error messages (no stack traces to frontend)
+
+## Testing & Quality
+- Write meaningful commit messages (conventional commits)
+- Test API endpoints before committing
+- Ensure frontend builds without errors
+- Check for linter errors
+- Test Docker builds locally
+
+## Feature-Specific Guidelines
+
+### CV Upload & Processing
+- Support PDF and DOCX formats only
+- Extract text using pdfplumber and python-docx
+- Store original files and extracted text
+- Generate embeddings for semantic search
+
+### CV Analysis
+- Use structured prompts for consistent AI responses
+- Return both strengths (pros) and improvements (cons)
+- Support markdown formatting in AI responses
+- Cache analysis results in database
+
+### CV Recommendation
+- Use cosine similarity for semantic matching
+- Return top N matches with similarity scores
+- Provide AI-powered summary of recommendations
+- Display results with proper markdown rendering
+
+### Resume Generation
+- Use ReportLab for PDF generation
+- Support custom templates
+- Generate based on user input and AI suggestions
+- Store generated resumes in /backend/outputs/resumes/
+
+### Chatbot
+- Context-aware responses using conversation history
+- Integrate with CV database for personalized advice
+- Support markdown in chat responses
+- Keep chat history in session
+
+## Common Patterns
+
+### API Error Handling
+```python
+try:
+    # operation
+except SpecificException as e:
+    raise HTTPException(status_code=400, detail=str(e))
+```
+
+### React Component Structure
+```jsx
+const Component = ({ props }) => {
+  const [state, setState] = useState()
+  
+  // handlers
+  const handleAction = () => {}
+  
+  // effects
+  useEffect(() => {}, [])
+  
+  return (
+    <div className="tailwind-classes">
+      {/* JSX */}
+    </div>
+  )
+}
+```
+
+### Database Queries
+```python
+# Use async with proper session management
+async with get_db() as db:
+    result = await db.execute(query)
+    return result.scalars().all()
+```
+
+## When Helping Me Code
+1. Understand the full context before suggesting changes
+2. Maintain consistency with existing code style
+3. Consider both frontend and backend impacts
+4. Update related documentation when needed
+5. Suggest tests for new features
+6. Flag potential security issues
+7. Optimize for performance where relevant
+8. Use proper error handling
+9. Follow the project's established patterns
+10. Ask clarifying questions if requirements are unclear
+
+## Don't Do
+- Don't use `any` type unnecessarily
+- Don't commit commented-out code
+- Don't use console.log in production code (use proper logging)
+- Don't hardcode values that should be environment variables
+- Don't skip error handling
+- Don't create files outside the established structure
+- Don't use deprecated libraries or patterns
+- Don't bypass security validations
+
