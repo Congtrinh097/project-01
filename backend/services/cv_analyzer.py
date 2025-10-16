@@ -25,7 +25,7 @@ class CVAnalyzer:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert HR professional and career counselor. Analyze CVs objectively and provide constructive feedback."
+                        "content": "You are an expert HR professional and career counselor. Analyze CVs objectively and provide constructive feedback. You can communicate fluently in both Vietnamese and English."
                     },
                     {
                         "role": "user",
@@ -61,9 +61,17 @@ Please analyze the following CV and provide a structured response with strengths
 CV Content:
 {cv_text[:4000]}  # Limit to avoid token limits
 
+LANGUAGE INSTRUCTIONS:
+- If the CV content is primarily in Vietnamese, provide your analysis in Vietnamese,
+- If the CV content is in English or any other language, respond only in English
+- If the CV content is in both Vietnamese and English, respond in both languages
+- If the CV content is in other languages, respond in the language of the CV content
+- When presenting CV strengths/areas for improvement, translate or paraphrase them to match the CV content language
+
+
 Please format your response exactly as follows using markdown formatting:
 
-**Strengths:**
+**Strengths:** (or **Điểm mạnh:** for Vietnamese)
 - **Relevant Experience**: [Description of experience alignment]
 - **Technical Proficiency**: [Description of technical skills]
 - **Quantifiable Achievements**: [Description of measurable accomplishments]
@@ -71,7 +79,7 @@ Please format your response exactly as follows using markdown formatting:
 - **Project Experience**: [Description of relevant projects]
 - **Recognition**: [Description of awards or recognition]
 
-**Areas for Improvement:**
+**Areas for Improvement:** (or **Điểm cần cải thiện:** for Vietnamese)
 - **Education Section**: [Suggestions for education presentation]
 - **Certifications**: [Recommendations for certifications]
 - **Career Progression**: [Suggestions for career narrative]
@@ -107,11 +115,11 @@ Be constructive and specific in your feedback. Use markdown formatting with **bo
                 
                 line_upper = line.upper().replace('*', '').replace(':', '')
                 
-                # Check for section headers - more flexible matching
-                if 'STRENGTH' in line_upper or 'PROS' in line_upper:
+                # Check for section headers - more flexible matching (English and Vietnamese)
+                if any(keyword in line_upper for keyword in ['STRENGTH', 'PROS', 'ĐIỂM MẠNH', 'DIEM MANH']):
                     current_section = 'pros'
                     continue
-                elif any(keyword in line_upper for keyword in ['IMPROVEMENT', 'WEAKNESS', 'CONS', 'AREAS FOR']):
+                elif any(keyword in line_upper for keyword in ['IMPROVEMENT', 'WEAKNESS', 'CONS', 'AREAS FOR', 'ĐIỂM CẦN CẢI THIỆN', 'DIEM CAN CAI THIEN']):
                     current_section = 'cons'
                     continue
                 elif line.startswith(('-', '•', '*')) and current_section:

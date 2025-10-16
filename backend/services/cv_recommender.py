@@ -169,10 +169,17 @@ Top Matching CVs:
 Based on the search query and the matching CVs above, provide:
 1. A brief overview of what was found
 2. Why these candidates match the query
-3. Key strengths and qualifications of the top matches
+3. Key strengths and qualifications of the top matches (translate/summarize the CV strengths in the same language as the query)
 4. A recommendation on which candidate(s) to consider first
 
-Keep your response concise, professional, and actionable (max 300 words).
+LANGUAGE INSTRUCTIONS:
+- If the user query is in Vietnamese, provide your entire response in Vietnamese (including CV summaries and strengths)
+- If the user query is in English, respond entirely in English
+- If the user query is in both Vietnamese and English, respond in both languages
+- If the user query is in other languages, respond in the language of the user's query
+- When presenting CV strengths/summaries, translate or paraphrase them to match the query language
+
+Keep your response concise, professional, and actionable (max 300 words per language).
 """
             
             response = self.chat_client.chat.completions.create(
@@ -180,7 +187,7 @@ Keep your response concise, professional, and actionable (max 300 words).
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert HR consultant specializing in candidate matching and recruitment."
+                        "content": "You are an expert HR consultant specializing in candidate matching and recruitment. You can communicate fluently in both Vietnamese and English, adapting your language to match the user's query."
                     },
                     {
                         "role": "user",
