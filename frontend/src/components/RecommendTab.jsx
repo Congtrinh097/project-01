@@ -1,17 +1,26 @@
-import React, { useState } from 'react'
-import { Search, Sparkles, FileText, TrendingUp, Loader2, AlertCircle } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
+import {
+  AlertCircle,
+  Download,
+  FileText,
+  Loader2,
+  Search,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
+import React, { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import { downloadCV } from "../services/api";
 
 const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
-  const [query, setQuery] = useState('')
-  const [limit, setLimit] = useState(5)
+  const [query, setQuery] = useState("");
+  const [limit, setLimit] = useState(5);
 
   const handleSubmit = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (query.trim()) {
-      onRecommend(query, limit)
+      onRecommend(query, limit);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -19,11 +28,14 @@ const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center mb-4">
           <Sparkles className="h-6 w-6 text-purple-600 mr-2" />
-          <h2 className="text-2xl font-bold text-gray-900">CV Recommendation</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            CV Recommendation
+          </h2>
         </div>
         <p className="text-gray-600">
-          Use semantic search to find the most relevant candidates based on natural language queries.
-          Our AI will analyze CVs and provide intelligent recommendations.
+          Use semantic search to find the most relevant candidates based on
+          natural language queries. Our AI will analyze CVs and provide
+          intelligent recommendations.
         </p>
       </div>
 
@@ -31,7 +43,10 @@ const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="query" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="query"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Search Query
             </label>
             <textarea
@@ -44,13 +59,17 @@ const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
               disabled={isLoading}
             />
             <p className="mt-2 text-sm text-gray-500">
-              Describe the ideal candidate using natural language. Be specific about skills, experience, and qualifications.
+              Describe the ideal candidate using natural language. Be specific
+              about skills, experience, and qualifications.
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="limit" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="limit"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Number of Results
               </label>
               <select
@@ -107,7 +126,9 @@ const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
             <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow-sm border border-purple-200 p-6">
               <div className="flex items-start mb-3">
                 <Sparkles className="h-5 w-5 text-purple-600 mt-1 mr-2 flex-shrink-0" />
-                <h3 className="text-lg font-semibold text-gray-900">AI Recommendation</h3>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  AI Recommendation
+                </h3>
               </div>
               <div className="prose prose-sm max-w-none markdown-content">
                 <ReactMarkdown>{results.ai_recommendation}</ReactMarkdown>
@@ -120,36 +141,58 @@ const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {results.results.length} Matching Candidate{results.results.length !== 1 ? 's' : ''}
+                  {results.results.length} Matching Candidate
+                  {results.results.length !== 1 ? "s" : ""}
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">
                   Query: "{results.query}"
                 </p>
               </div>
-              
+
               <div className="divide-y divide-gray-200">
                 {results.results.map((result, index) => (
-                  <div key={result.id} className="p-6 hover:bg-gray-50 transition-colors">
+                  <div
+                    key={result.id}
+                    className="p-6 hover:bg-gray-50 transition-colors"
+                  >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-start space-x-3">
                         <div className="flex-shrink-0">
                           <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                            <span className="text-purple-600 font-semibold">#{index + 1}</span>
+                            <span className="text-purple-600 font-semibold">
+                              #{index + 1}
+                            </span>
                           </div>
                         </div>
                         <div>
                           <div className="flex items-center space-x-2">
                             <FileText className="h-4 w-4 text-gray-400" />
-                            <h4 className="text-base font-medium text-gray-900">{result.filename}</h4>
+                            <h4 className="text-base font-medium text-gray-900">
+                              {result.filename}
+                            </h4>
                           </div>
                           {result.upload_time && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              Uploaded: {new Date(result.upload_time).toLocaleDateString()}
-                            </p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <p className="text-xs text-gray-500">
+                                Uploaded:{" "}
+                                {new Date(
+                                  result.upload_time
+                                ).toLocaleDateString()}
+                              </p>
+                              <a
+                                href={downloadCV(result.id)}
+                                download
+                                className="inline-flex items-center text-xs text-purple-600 hover:text-purple-800 hover:underline"
+                                title="Download CV"
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                Download
+                              </a>
+                            </div>
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-2">
                         <TrendingUp className="h-4 w-4 text-green-500" />
                         <span className="text-sm font-semibold text-green-600">
@@ -170,10 +213,15 @@ const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
                     {/* Strengths */}
                     {result.summary_pros && (
                       <div className="mt-3">
-                        <h5 className="text-sm font-medium text-gray-700 mb-2">Key Strengths:</h5>
+                        <h5 className="text-sm font-medium text-gray-700 mb-2">
+                          Key Strengths:
+                        </h5>
                         <div className="text-sm text-gray-600 prose prose-sm max-w-none markdown-content">
                           <ReactMarkdown>
-                            {result.summary_pros.split('\n').slice(0, 5).join('\n')}
+                            {result.summary_pros
+                              .split("\n")
+                              .slice(0, 5)
+                              .join("\n")}
                           </ReactMarkdown>
                         </div>
                       </div>
@@ -185,17 +233,19 @@ const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
           ) : results.results && results.results.length === 0 ? (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
               <FileText className="h-12 w-12 text-yellow-500 mx-auto mb-3" />
-              <h3 className="text-lg font-medium text-yellow-900 mb-2">No Matches Found</h3>
+              <h3 className="text-lg font-medium text-yellow-900 mb-2">
+                No Matches Found
+              </h3>
               <p className="text-yellow-700">
-                No CVs matched your search criteria. Try adjusting your query or upload more CVs to the database.
+                No CVs matched your search criteria. Try adjusting your query or
+                upload more CVs to the database.
               </p>
             </div>
           ) : null}
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default RecommendTab
-
+export default RecommendTab;

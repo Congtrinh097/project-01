@@ -176,6 +176,34 @@ async def list_cvs(db: Session = Depends(get_db)):
         for cv in cvs
     ]
 
+@app.get("/download-cv/{cv_id}")
+async def download_cv(cv_id: int, db: Session = Depends(get_db)):
+    """
+    Download the original CV file
+    """
+    cv = db.query(CV).filter(CV.id == cv_id).first()
+    if not cv:
+        raise HTTPException(status_code=404, detail="CV not found")
+    
+    if not cv.file_path or not os.path.exists(cv.file_path):
+        logger.error(f"CV file not found: {cv.file_path}")
+        raise HTTPException(status_code=404, detail="CV file not found")
+    
+    # Determine media type based on file extension
+    file_extension = cv.filename.split('.')[-1].lower()
+    media_type_map = {
+        'pdf': 'application/pdf',
+        'doc': 'application/msword',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    }
+    media_type = media_type_map.get(file_extension, 'application/octet-stream')
+    
+    return FileResponse(
+        path=cv.file_path,
+        media_type=media_type,
+        filename=cv.filename
+    )
+
 @app.delete("/cv/{cv_id}")
 async def delete_cv(cv_id: int, db: Session = Depends(get_db)):
     """
