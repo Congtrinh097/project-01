@@ -84,13 +84,13 @@ function ChatbotTab() {
     <div className="max-w-7xl mx-auto h-full">
       <div className="card overflow-hidden flex flex-col h-[calc(100vh-10rem)] sm:h-[calc(100vh-12rem)] lg:h-[calc(100vh-14rem)]">
         {/* Chat Header */}
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white p-4 sm:p-6 flex-shrink-0">
+        <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-4 sm:p-6 flex-shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center">
               <MessageCircle className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 flex-shrink-0" />
               <div>
                 <h2 className="text-lg sm:text-2xl font-bold">Interview Practice Bot</h2>
-                <p className="text-primary-100 text-xs sm:text-sm mt-1">
+                <p className="text-purple-100 text-xs sm:text-sm mt-1">
                   Luyện tập phỏng vấn với AI - Nhập vị trí công việc để bắt đầu
                 </p>
               </div>
@@ -120,28 +120,28 @@ function ChatbotTab() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 max-w-2xl w-full">
                 <button
                   onClick={() => setInputMessage('Tôi muốn luyện phỏng vấn vị trí Software Engineer')}
-                  className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors text-left"
+                  className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left"
                 >
                   <p className="text-sm sm:text-base font-medium text-gray-900">Software Engineer</p>
                   <p className="text-xs sm:text-sm text-gray-500">Luyện tập phỏng vấn kỹ sư phần mềm</p>
                 </button>
                 <button
                   onClick={() => setInputMessage('Tôi muốn luyện phỏng vấn vị trí Data Analyst')}
-                  className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors text-left"
+                  className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left"
                 >
                   <p className="text-sm sm:text-base font-medium text-gray-900">Data Analyst</p>
                   <p className="text-xs sm:text-sm text-gray-500">Luyện tập phỏng vấn phân tích dữ liệu</p>
                 </button>
                 <button
                   onClick={() => setInputMessage('Tôi muốn luyện phỏng vấn vị trí Marketing Manager')}
-                  className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors text-left"
+                  className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left"
                 >
                   <p className="text-sm sm:text-base font-medium text-gray-900">Marketing Manager</p>
                   <p className="text-xs sm:text-sm text-gray-500">Luyện tập phỏng vấn quản lý marketing</p>
                 </button>
                 <button
                   onClick={() => setInputMessage('Tôi muốn luyện phỏng vấn vị trí Product Manager')}
-                  className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition-colors text-left"
+                  className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left"
                 >
                   <p className="text-sm sm:text-base font-medium text-gray-900">Product Manager</p>
                   <p className="text-xs sm:text-sm text-gray-500">Luyện tập phỏng vấn quản lý sản phẩm</p>
@@ -158,7 +158,7 @@ function ChatbotTab() {
                   <div
                     className={`max-w-[85%] sm:max-w-2xl lg:max-w-3xl rounded-lg px-3 py-2 sm:px-4 sm:py-3 ${
                       message.role === 'user'
-                        ? 'bg-primary-600 text-white'
+                        ? 'bg-purple-600 text-white'
                         : message.isError
                         ? 'bg-red-100 text-red-800 border border-red-200'
                         : 'bg-white text-gray-800 border border-gray-200'
@@ -166,13 +166,13 @@ function ChatbotTab() {
                   >
                     <div className="flex items-start">
                       {message.role === 'assistant' && (
-                        <MessageCircle className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0 mt-0.5 ${message.isError ? 'text-red-500' : 'text-primary-600'}`} />
+                        <MessageCircle className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0 mt-0.5 ${message.isError ? 'text-red-500' : 'text-purple-600'}`} />
                       )}
                       <div className="flex-1">
                         <div className="whitespace-pre-wrap break-words text-sm sm:text-base">
                           {message.content}
                         </div>
-                        <p className={`text-xs mt-1 sm:mt-2 ${message.role === 'user' ? 'text-primary-100' : 'text-gray-400'}`}>
+                        <p className={`text-xs mt-1 sm:mt-2 ${message.role === 'user' ? 'text-purple-100' : 'text-gray-400'}`}>
                           {new Date(message.timestamp).toLocaleTimeString('vi-VN', { 
                             hour: '2-digit', 
                             minute: '2-digit' 
@@ -187,7 +187,7 @@ function ChatbotTab() {
                 <div className="flex justify-start">
                   <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
                     <div className="flex items-center space-x-2">
-                      <MessageCircle className="h-5 w-5 text-primary-600" />
+                      <MessageCircle className="h-5 w-5 text-purple-600" />
                       <div className="flex space-x-1">
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                         <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -241,7 +241,7 @@ function ChatbotTab() {
                   disabled={!inputMessage.trim() || chatMutation.isLoading}
                   className={`ml-1 sm:ml-2 mr-1 sm:mr-2 p-2 sm:p-3 rounded-full transition-all duration-200 flex items-center justify-center ${
                     inputMessage.trim() && !chatMutation.isLoading
-                      ? 'bg-primary-600 hover:bg-primary-700 text-white shadow-md hover:shadow-lg'
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg'
                       : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   }`}
                   title="Send message"
