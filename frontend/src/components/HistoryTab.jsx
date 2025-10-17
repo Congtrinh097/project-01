@@ -6,7 +6,7 @@ function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect, onDeleteCV, isDel
   if (cvsLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
       </div>
     )
   }
@@ -27,7 +27,7 @@ function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect, onDeleteCV, isDel
                   onClick={() => onCVSelect(cv.id)}
                   className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                     selectedCV?.id === cv.id
-                      ? 'border-primary-500 bg-primary-50'
+                      ? 'border-purple-500 bg-purple-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >

@@ -13,7 +13,7 @@ function UploadTab({ uploadMutation, handleFileUpload }) {
           </p>
         </div>
 
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary-400 transition-colors">
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-purple-400 transition-colors">
           <input
             type="file"
             accept=".pdf,.docx"
@@ -28,8 +28,8 @@ function UploadTab({ uploadMutation, handleFileUpload }) {
           >
             {uploadMutation.isLoading ? (
               <div className="flex flex-col items-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
-                <p className="text-primary-600 font-medium">Analyzing your CV...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-4"></div>
+                <p className="text-purple-600 font-medium">Analyzing your CV...</p>
                 <p className="text-sm text-gray-500 mt-2">This may take a few moments</p>
               </div>
             ) : (

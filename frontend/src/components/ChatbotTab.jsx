@@ -1,22 +1,22 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { MessageCircle, Send, Plus, Mic, ArrowUp } from 'lucide-react'
-import { useMutation } from 'react-query'
-import { sendChatMessage } from '../services/api'
+import { ArrowUp, MessageCircle, Mic } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { useMutation } from "react-query";
+import { sendChatMessage } from "../services/api";
 
 function ChatbotTab() {
-  const [messages, setMessages] = useState([])
-  const [inputMessage, setInputMessage] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const messagesEndRef = useRef(null)
-  const inputRef = useRef(null)
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    scrollToBottom();
+  }, [messages]);
 
   const chatMutation = useMutation(
     ({ message, history }) => sendChatMessage(message, history),
@@ -24,61 +24,65 @@ function ChatbotTab() {
       onSuccess: (data) => {
         setMessages((prev) => [
           ...prev,
-          { role: 'assistant', content: data.response, timestamp: data.timestamp }
-        ])
-        setIsTyping(false)
+          {
+            role: "assistant",
+            content: data.response,
+            timestamp: data.timestamp,
+          },
+        ]);
+        setIsTyping(false);
       },
       onError: (error) => {
-        console.error('Chat error:', error)
+        console.error("Chat error:", error);
         setMessages((prev) => [
           ...prev,
           {
-            role: 'assistant',
-            content: 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.',
+            role: "assistant",
+            content: "Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.",
             timestamp: new Date().toISOString(),
-            isError: true
-          }
-        ])
-        setIsTyping(false)
-      }
+            isError: true,
+          },
+        ]);
+        setIsTyping(false);
+      },
     }
-  )
+  );
 
   const handleSendMessage = async (e) => {
-    e.preventDefault()
-    
-    if (!inputMessage.trim() || chatMutation.isLoading) return
+    e.preventDefault();
 
-    const userMessage = inputMessage.trim()
-    setInputMessage('')
+    if (!inputMessage.trim() || chatMutation.isLoading) return;
+
+    const userMessage = inputMessage.trim();
+    setInputMessage("");
 
     // Add user message to chat
     const newUserMessage = {
-      role: 'user',
+      role: "user",
       content: userMessage,
-      timestamp: new Date().toISOString()
-    }
-    setMessages((prev) => [...prev, newUserMessage])
-    setIsTyping(true)
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, newUserMessage]);
+    setIsTyping(true);
 
     // Prepare conversation history (only role and content)
-    const conversationHistory = messages.map(msg => ({
+    const conversationHistory = messages.map((msg) => ({
       role: msg.role,
-      content: msg.content
-    }))
+      content: msg.content,
+    }));
 
     // Send to API
     chatMutation.mutate({
       message: userMessage,
-      history: conversationHistory
-    })
-  }
+      history: conversationHistory,
+    });
+  };
 
   const handleClearChat = () => {
-    if (window.confirm('Bạn có muốn xóa toàn bộ cuộc trò chuyện không?')) {
-      setMessages([])
+    if (window.confirm("Bạn có muốn xóa toàn bộ cuộc trò chuyện không?")) {
+      setMessages([]);
     }
-  }
+  };
 
   return (
     <div className="max-w-7xl mx-auto h-full">
@@ -89,7 +93,9 @@ function ChatbotTab() {
             <div className="flex items-center">
               <MessageCircle className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 flex-shrink-0" />
               <div>
-                <h2 className="text-lg sm:text-2xl font-bold">Interview Practice Bot</h2>
+                <h2 className="text-lg sm:text-2xl font-bold">
+                  Interview Practice Bot
+                </h2>
                 <p className="text-purple-100 text-xs sm:text-sm mt-1">
                   Luyện tập phỏng vấn với AI - Nhập vị trí công việc để bắt đầu
                 </p>
@@ -115,36 +121,69 @@ function ChatbotTab() {
                 Bắt đầu buổi phỏng vấn của bạn
               </h3>
               <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6 max-w-md">
-                Chào mừng bạn đến với Interview Practice Bot! Hãy cho tôi biết vị trí công việc bạn muốn luyện tập phỏng vấn.
+                Chào mừng bạn đến với Interview Practice Bot! Hãy cho tôi biết
+                vị trí công việc bạn muốn luyện tập phỏng vấn.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 max-w-2xl w-full">
                 <button
-                  onClick={() => setInputMessage('Tôi muốn luyện phỏng vấn vị trí Software Engineer')}
+                  onClick={() =>
+                    setInputMessage(
+                      "Tôi muốn luyện phỏng vấn vị trí Software Engineer"
+                    )
+                  }
                   className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left"
                 >
-                  <p className="text-sm sm:text-base font-medium text-gray-900">Software Engineer</p>
-                  <p className="text-xs sm:text-sm text-gray-500">Luyện tập phỏng vấn kỹ sư phần mềm</p>
+                  <p className="text-sm sm:text-base font-medium text-gray-900">
+                    Software Engineer
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    Luyện tập phỏng vấn kỹ sư phần mềm
+                  </p>
                 </button>
                 <button
-                  onClick={() => setInputMessage('Tôi muốn luyện phỏng vấn vị trí Data Analyst')}
+                  onClick={() =>
+                    setInputMessage(
+                      "Tôi muốn luyện phỏng vấn vị trí Data Analyst"
+                    )
+                  }
                   className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left"
                 >
-                  <p className="text-sm sm:text-base font-medium text-gray-900">Data Analyst</p>
-                  <p className="text-xs sm:text-sm text-gray-500">Luyện tập phỏng vấn phân tích dữ liệu</p>
+                  <p className="text-sm sm:text-base font-medium text-gray-900">
+                    Data Analyst
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    Luyện tập phỏng vấn phân tích dữ liệu
+                  </p>
                 </button>
                 <button
-                  onClick={() => setInputMessage('Tôi muốn luyện phỏng vấn vị trí Marketing Manager')}
+                  onClick={() =>
+                    setInputMessage(
+                      "Tôi muốn luyện phỏng vấn vị trí Marketing Manager"
+                    )
+                  }
                   className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left"
                 >
-                  <p className="text-sm sm:text-base font-medium text-gray-900">Marketing Manager</p>
-                  <p className="text-xs sm:text-sm text-gray-500">Luyện tập phỏng vấn quản lý marketing</p>
+                  <p className="text-sm sm:text-base font-medium text-gray-900">
+                    Marketing Manager
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    Luyện tập phỏng vấn quản lý marketing
+                  </p>
                 </button>
                 <button
-                  onClick={() => setInputMessage('Tôi muốn luyện phỏng vấn vị trí Product Manager')}
+                  onClick={() =>
+                    setInputMessage(
+                      "Tôi muốn luyện phỏng vấn vị trí Product Manager"
+                    )
+                  }
                   className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors text-left"
                 >
-                  <p className="text-sm sm:text-base font-medium text-gray-900">Product Manager</p>
-                  <p className="text-xs sm:text-sm text-gray-500">Luyện tập phỏng vấn quản lý sản phẩm</p>
+                  <p className="text-sm sm:text-base font-medium text-gray-900">
+                    Product Manager
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    Luyện tập phỏng vấn quản lý sản phẩm
+                  </p>
                 </button>
               </div>
             </div>
@@ -153,30 +192,45 @@ function ChatbotTab() {
               {messages.map((message, index) => (
                 <div
                   key={index}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
                 >
                   <div
                     className={`max-w-[85%] sm:max-w-2xl lg:max-w-3xl rounded-lg px-3 py-2 sm:px-4 sm:py-3 ${
-                      message.role === 'user'
-                        ? 'bg-purple-600 text-white'
+                      message.role === "user"
+                        ? "bg-purple-600 text-white"
                         : message.isError
-                        ? 'bg-red-100 text-red-800 border border-red-200'
-                        : 'bg-white text-gray-800 border border-gray-200'
+                        ? "bg-red-100 text-red-800 border border-red-200"
+                        : "bg-white text-gray-800 border border-gray-200"
                     }`}
                   >
                     <div className="flex items-start">
-                      {message.role === 'assistant' && (
-                        <MessageCircle className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0 mt-0.5 ${message.isError ? 'text-red-500' : 'text-purple-600'}`} />
+                      {message.role === "assistant" && (
+                        <MessageCircle
+                          className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0 mt-0.5 ${
+                            message.isError ? "text-red-500" : "text-purple-600"
+                          }`}
+                        />
                       )}
                       <div className="flex-1">
                         <div className="whitespace-pre-wrap break-words text-sm sm:text-base">
                           {message.content}
                         </div>
-                        <p className={`text-xs mt-1 sm:mt-2 ${message.role === 'user' ? 'text-purple-100' : 'text-gray-400'}`}>
-                          {new Date(message.timestamp).toLocaleTimeString('vi-VN', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
+                        <p
+                          className={`text-xs mt-1 sm:mt-2 ${
+                            message.role === "user"
+                              ? "text-purple-100"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          {new Date(message.timestamp).toLocaleTimeString(
+                            "vi-VN",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )}
                         </p>
                       </div>
                     </div>
@@ -189,9 +243,18 @@ function ChatbotTab() {
                     <div className="flex items-center space-x-2">
                       <MessageCircle className="h-5 w-5 text-purple-600" />
                       <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                        <div
+                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "0ms" }}
+                        ></div>
+                        <div
+                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "150ms" }}
+                        ></div>
+                        <div
+                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "300ms" }}
+                        ></div>
                       </div>
                     </div>
                   </div>
@@ -215,9 +278,9 @@ function ChatbotTab() {
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        handleSendMessage(e)
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleSendMessage(e);
                       }
                     }}
                     placeholder="Ask anything"
@@ -225,7 +288,7 @@ function ChatbotTab() {
                     disabled={chatMutation.isLoading}
                   />
                 </div>
-                
+
                 {/* Microphone Icon - Hidden on very small screens */}
                 <button
                   type="button"
@@ -234,15 +297,15 @@ function ChatbotTab() {
                 >
                   <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
-                
+
                 {/* Send Button - Circular */}
                 <button
                   type="submit"
                   disabled={!inputMessage.trim() || chatMutation.isLoading}
                   className={`ml-1 sm:ml-2 mr-1 sm:mr-2 p-2 sm:p-3 rounded-full transition-all duration-200 flex items-center justify-center ${
                     inputMessage.trim() && !chatMutation.isLoading
-                      ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg'
-                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      ? "bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg"
+                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
                   }`}
                   title="Send message"
                 >
@@ -261,7 +324,7 @@ function ChatbotTab() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default ChatbotTab
+export default ChatbotTab;
