@@ -1,185 +1,229 @@
-import React, { useState } from 'react'
-import { Upload, History, FileText, MessageCircle, FileEdit, Sparkles } from 'lucide-react'
-import { useQuery, useMutation, useQueryClient } from 'react-query'
-import { uploadCV, getCVs, getCV, deleteCV, generateResume, getResumes, deleteResume, recommendCVs } from './services/api'
+import {
+  FileEdit,
+  FileText,
+  History,
+  Menu,
+  MessageCircle,
+  Sparkles,
+  Upload,
+  X,
+} from "lucide-react";
+import React, { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "react-query";
+import {
+  deleteCV,
+  deleteResume,
+  generateResume,
+  getCV,
+  getCVs,
+  getResumes,
+  recommendCVs,
+  uploadCV,
+} from "./services/api";
 
 // Import tab components
-import UploadTab from './components/UploadTab'
-import GenerateResumeTab from './components/GenerateResumeTab'
-import HistoryTab from './components/HistoryTab'
-import ChatbotTab from './components/ChatbotTab'
-import RecommendTab from './components/RecommendTab'
+import ChatbotTab from "./components/ChatbotTab";
+import GenerateResumeTab from "./components/GenerateResumeTab";
+import HistoryTab from "./components/HistoryTab";
+import RecommendTab from "./components/RecommendTab";
+import UploadTab from "./components/UploadTab";
 
 function App() {
-  const [activeTab, setActiveTab] = useState('upload')
-  const [selectedCV, setSelectedCV] = useState(null)
-  const [selectedResume, setSelectedResume] = useState(null)
-  const [recommendResults, setRecommendResults] = useState(null)
-  const queryClient = useQueryClient()
+  const [activeTab, setActiveTab] = useState("upload");
+  const [selectedCV, setSelectedCV] = useState(null);
+  const [selectedResume, setSelectedResume] = useState(null);
+  const [recommendResults, setRecommendResults] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const queryClient = useQueryClient();
 
-  const { data: cvs = [], isLoading: cvsLoading } = useQuery('cvs', getCVs)
-  const { data: resumes = [], isLoading: resumesLoading } = useQuery('resumes', getResumes)
+  const { data: cvs = [], isLoading: cvsLoading } = useQuery("cvs", getCVs);
+  const { data: resumes = [], isLoading: resumesLoading } = useQuery(
+    "resumes",
+    getResumes
+  );
 
   const uploadMutation = useMutation(uploadCV, {
     onSuccess: () => {
-      queryClient.invalidateQueries('cvs')
-      setActiveTab('history')
+      queryClient.invalidateQueries("cvs");
+      setActiveTab("history");
     },
-  })
+  });
 
   const deleteMutation = useMutation(deleteCV, {
     onSuccess: () => {
-      queryClient.invalidateQueries('cvs')
+      queryClient.invalidateQueries("cvs");
       // Clear selected CV if it was deleted
       if (selectedCV) {
-        setSelectedCV(null)
+        setSelectedCV(null);
       }
     },
-  })
+  });
 
   const generateResumeMutation = useMutation(generateResume, {
     onSuccess: (data) => {
-      queryClient.invalidateQueries('resumes')
-      setSelectedResume(data)
+      queryClient.invalidateQueries("resumes");
+      setSelectedResume(data);
     },
-  })
+  });
 
   const deleteResumeMutation = useMutation(deleteResume, {
     onSuccess: () => {
-      queryClient.invalidateQueries('resumes')
+      queryClient.invalidateQueries("resumes");
       if (selectedResume) {
-        setSelectedResume(null)
+        setSelectedResume(null);
       }
     },
-  })
+  });
 
   const recommendMutation = useMutation(
     ({ query, limit }) => recommendCVs(query, limit),
     {
       onSuccess: (data) => {
-        setRecommendResults(data)
+        setRecommendResults(data);
       },
     }
-  )
+  );
 
   const handleFileUpload = (event) => {
-    const file = event.target.files[0]
+    const file = event.target.files[0];
     if (file) {
-      uploadMutation.mutate(file)
+      uploadMutation.mutate(file);
     }
-  }
+  };
 
   const handleCVSelect = async (cvId) => {
     try {
-      const cv = await getCV(cvId)
-      setSelectedCV(cv)
+      const cv = await getCV(cvId);
+      setSelectedCV(cv);
     } catch (error) {
-      console.error('Error fetching CV details:', error)
+      console.error("Error fetching CV details:", error);
     }
-  }
+  };
 
   const handleDeleteCV = (cvId, event) => {
-    event.stopPropagation() // Prevent triggering the CV selection
-    if (window.confirm('Are you sure you want to delete this CV?')) {
-      deleteMutation.mutate(cvId)
+    event.stopPropagation(); // Prevent triggering the CV selection
+    if (window.confirm("Are you sure you want to delete this CV?")) {
+      deleteMutation.mutate(cvId);
     }
-  }
+  };
 
   const handleGenerateResume = (inputText) => {
-    generateResumeMutation.mutate(inputText)
-  }
+    generateResumeMutation.mutate(inputText);
+  };
 
   const handleDeleteResume = (resumeId, event) => {
-    event.stopPropagation()
-    if (window.confirm('Are you sure you want to delete this resume?')) {
-      deleteResumeMutation.mutate(resumeId)
+    event.stopPropagation();
+    if (window.confirm("Are you sure you want to delete this resume?")) {
+      deleteResumeMutation.mutate(resumeId);
     }
-  }
+  };
 
   const handleRecommend = (query, limit) => {
-    setRecommendResults(null) // Clear previous results
-    recommendMutation.mutate({ query, limit })
-  }
+    setRecommendResults(null); // Clear previous results
+    recommendMutation.mutate({ query, limit });
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false); // Close mobile menu on tab change
+  };
+
+  const menuItems = [
+    { id: "recommend", icon: Sparkles, label: "Recommend CVs" },
+    { id: "chatbot", icon: MessageCircle, label: "Interview Bot" },
+    { id: "generate", icon: FileEdit, label: "Generate CV" },
+    { id: "upload", icon: Upload, label: "Upload CV" },
+    { id: "history", icon: History, label: "History" },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
+            {/* Logo */}
             <div className="flex items-center">
-              <FileText className="h-8 w-8 text-primary-600" />
-              <h1 className="ml-2 text-xl font-bold text-gray-900">CV Analyzer</h1>
+              <FileText className="h-8 w-8 text-purple-600" />
+              <h1 className="ml-2 text-xl font-bold text-gray-900">
+                CV Analyzer
+              </h1>
             </div>
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setActiveTab('recommend')}
-                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-                  activeTab === 'recommend'
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Recommend
-              </button>
-              <button
-                onClick={() => setActiveTab('chatbot')}
-                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-                  activeTab === 'chatbot'
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Interview Practice
-              </button>
-              <button
-                onClick={() => setActiveTab('generate')}
-                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-                  activeTab === 'generate'
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <FileEdit className="h-4 w-4 mr-2" />
-                Generate Resume
-              </button>
-              <button
-                onClick={() => setActiveTab('upload')}
-                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-                  activeTab === 'upload'
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Upload CV
-              </button>
-              <button
-                onClick={() => setActiveTab('history')}
-                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium ${
-                  activeTab === 'history'
-                    ? 'bg-primary-100 text-primary-700'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <History className="h-4 w-4 mr-2" />
-                History
-              </button>
-            </div>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex space-x-2">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleTabChange(item.id)}
+                    className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      activeTab === item.id
+                        ? "bg-purple-100 text-purple-700"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 mr-2" />
+                    <span className="hidden xl:inline">{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500"
+              aria-expanded={isMobileMenuOpen}
+            >
+              <span className="sr-only">Open main menu</span>
+              {isMobileMenuOpen ? (
+                <X className="block h-6 w-6" />
+              ) : (
+                <Menu className="block h-6 w-6" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden border-t border-gray-200">
+            <div className="px-2 pt-2 pb-3 space-y-1">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleTabChange(item.id)}
+                    className={`w-full flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                      activeTab === item.id
+                        ? "bg-purple-100 text-purple-700"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 mr-3" />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'upload' && (
-          <UploadTab uploadMutation={uploadMutation} handleFileUpload={handleFileUpload} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        {activeTab === "upload" && (
+          <UploadTab
+            uploadMutation={uploadMutation}
+            handleFileUpload={handleFileUpload}
+          />
         )}
-        
-        {activeTab === 'generate' && (
-          <GenerateResumeTab 
+
+        {activeTab === "generate" && (
+          <GenerateResumeTab
             generateMutation={generateResumeMutation}
             resumes={resumes}
             resumesLoading={resumesLoading}
@@ -189,10 +233,10 @@ function App() {
             isDeleting={deleteResumeMutation.isLoading}
           />
         )}
-        
-        {activeTab === 'history' && (
-          <HistoryTab 
-            cvs={cvs} 
+
+        {activeTab === "history" && (
+          <HistoryTab
+            cvs={cvs}
             cvsLoading={cvsLoading}
             selectedCV={selectedCV}
             onCVSelect={handleCVSelect}
@@ -201,23 +245,22 @@ function App() {
           />
         )}
 
-        {activeTab === 'chatbot' && (
-          <ChatbotTab />
-        )}
+        {activeTab === "chatbot" && <ChatbotTab />}
 
-        {activeTab === 'recommend' && (
-          <RecommendTab 
+        {activeTab === "recommend" && (
+          <RecommendTab
             onRecommend={handleRecommend}
             isLoading={recommendMutation.isLoading}
-            error={recommendMutation.error?.response?.data?.detail || recommendMutation.error?.message}
+            error={
+              recommendMutation.error?.response?.data?.detail ||
+              recommendMutation.error?.message
+            }
             results={recommendResults}
           />
         )}
       </main>
     </div>
-  )
+  );
 }
 
-
-export default App
-
+export default App;
