@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     # OpenAI
     OPENAI_API_KEY: str = ""
     OPENAI_EMBED_API_KEY: str = ""  # Separate key for embeddings (falls back to OPENAI_API_KEY if not set)
+    HF_TOKEN: str = ""
+    HF_MODEL_NAME: str = "meta-llama/Llama-3.1-8B"
     
     # File upload settings
     UPLOAD_DIR: str = "/tmp/uploads"

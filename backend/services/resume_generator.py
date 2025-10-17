@@ -1,7 +1,7 @@
 """
 resume_generator.py
 
-Service for generating professional resumes using LLaMA3 (locally) or Mock mode.
+Service for generating professional resumes using Hugging Face (via Featherless AI) or Mock mode.
 Supports text input and structured profile JSON.
 
 Author: AI Assistant
@@ -13,58 +13,67 @@ import json
 import textwrap
 import logging
 from typing import Optional, Dict, Any
+from config import settings
 
 logger = logging.getLogger(__name__)
 
-# Optional: Try to import Llama from llama_cpp
+# Optional: Try to import HuggingFace InferenceClient
 try:
-    from llama_cpp import Llama  # type: ignore
-    _LLAMA_AVAILABLE = True
+    from huggingface_hub import InferenceClient
+    _HF_AVAILABLE = True
 except Exception:
-    _LLAMA_AVAILABLE = False
+    _HF_AVAILABLE = False
 
 
-class LlamaModel:
+class HuggingFaceModel:
     """
-    Wrapper around LLaMA via llama-cpp-python. Provides generate_text(prompt, ...) -> str
-    Falls back to raising descriptive errors if LLaMA or model is unavailable.
+    Wrapper around Hugging Face InferenceClient using Featherless AI provider.
+    Provides generate_text(prompt, ...) -> str
     """
 
-    def __init__(self, model_path: str, n_ctx: int = 2048):
-        self.model_path = model_path
-        self.n_ctx = n_ctx
-        self._llm = None
+    def __init__(self, model_name: str = settings.HF_MODEL_NAME):
+        self.model_name = model_name
+        self._client = None
 
-        if not _LLAMA_AVAILABLE:
+        if not _HF_AVAILABLE:
             raise RuntimeError(
-                "llama-cpp-python is not installed. Install with: pip install llama-cpp-python"
+                "huggingface_hub is not installed. Install with: pip install huggingface_hub"
             )
 
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f"Model file not found at: {model_path}")
+        hf_token = settings.HF_TOKEN
+        if not hf_token:
+            raise RuntimeError(
+                "HF_TOKEN environment variable not set. Please set your Hugging Face API token."
+            )
 
         try:
-            # initialize the llama model
-            self._llm = Llama(model_path=model_path, n_ctx=n_ctx)
-            logger.info(f"[LlamaModel] Loaded LLaMA model from: {model_path}")
+            # Initialize the InferenceClient with token
+            # Note: For Featherless AI, the token should be your Featherless API key
+            self._client = InferenceClient(token=hf_token)
+            logger.info(f"[HuggingFaceModel] Initialized InferenceClient with model: {model_name}")
         except Exception as e:
-            raise RuntimeError(f"Failed to initialize LLaMA: {e}")
+            raise RuntimeError(f"Failed to initialize Hugging Face client: {e}")
 
     def generate_text(self, prompt: str, max_tokens: int = 512, temperature: float = 0.2) -> str:
         """
-        Generate text using the loaded model.
-        Returns the generated string (decoded).
+        Generate text using the Hugging Face model.
+        Returns the generated string.
         """
-        if self._llm is None:
-            raise RuntimeError("LLaMA model not initialized.")
+        if self._client is None:
+            raise RuntimeError("Hugging Face client not initialized.")
         try:
-            resp = self._llm(prompt=prompt, max_tokens=max_tokens, temperature=temperature)
-            if isinstance(resp, dict) and 'choices' in resp and len(resp['choices']) > 0:
-                return resp['choices'][0].get('text', '').strip()
-            if hasattr(resp, 'choices') and len(resp.choices) > 0:
-                return resp.choices[0].text.strip()
-            return str(resp).strip()
+            result = self._client.text_generation(
+                prompt,
+                model=self.model_name,
+                max_new_tokens=max_tokens,
+                temperature=temperature,
+            )
+            
+            if isinstance(result, str):
+                return result.strip()
+            return str(result).strip()
         except Exception as e:
+            logger.error(f"Error during text generation: {e}")
             raise RuntimeError(f"Error during text generation: {e}")
 
 
@@ -181,24 +190,24 @@ class ResumeGenerator:
 
     def __init__(self):
         """
-        Initialize the resume generator with either LLaMA or Mock model
+        Initialize the resume generator with either Hugging Face or Mock model
         """
         self.model = None
         self._initialize_model()
 
     def _initialize_model(self):
-        """Initialize the appropriate model (LLaMA or Mock)"""
-        model_path = os.environ.get("MODEL_PATH", "../models/llama-2-7b-chat.Q4_K_M.gguf")
+        """Initialize the appropriate model (Hugging Face or Mock)"""
+        model_name = os.environ.get("HF_MODEL_NAME", "meta-llama/Llama-3.1-8B")
         
         try:
-            if _LLAMA_AVAILABLE and os.path.exists(model_path):
-                logger.info("Attempting to load LLaMA model...")
-                self.model = LlamaModel(model_path=model_path)
-                logger.info("LLaMA model loaded successfully")
+            if _HF_AVAILABLE and settings.HF_TOKEN:
+                logger.info("Attempting to load Hugging Face model...")
+                self.model = HuggingFaceModel(model_name=model_name)
+                logger.info(f"Hugging Face model loaded successfully: {model_name}")
             else:
-                raise RuntimeError("LLaMA not available or model not found")
+                raise RuntimeError("Hugging Face not available or HF_TOKEN not set")
         except Exception as e:
-            logger.warning(f"LLaMA initialization failed: {e}")
+            logger.warning(f"Hugging Face initialization failed: {e}")
             logger.info("Falling back to MockLlamaModel")
             self.model = MockLlamaModel()
 
