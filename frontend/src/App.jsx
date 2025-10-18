@@ -1,4 +1,5 @@
 import {
+  Bug,
   FileEdit,
   FileText,
   History,
@@ -124,6 +125,15 @@ function App() {
   };
 
   const handleTabChange = (tab) => {
+    if (tab === "report-bug") {
+      window.open(
+        "https://github.com/Congtrinh097/project-01/issues/new",
+        "_blank",
+        "noopener,noreferrer"
+      );
+      setIsMobileMenuOpen(false);
+      return;
+    }
     setActiveTab(tab);
     setIsMobileMenuOpen(false); // Close mobile menu on tab change
   };
@@ -134,6 +144,7 @@ function App() {
     { id: "generate", icon: FileEdit, label: "Generate CV" },
     { id: "upload", icon: Upload, label: "Upload CV" },
     { id: "history", icon: History, label: "History" },
+    { id: "report-bug", icon: Bug, label: "Report Bug" },
   ];
 
   return (
@@ -154,6 +165,7 @@ function App() {
             <nav className="hidden lg:flex space-x-2">
               {menuItems.map((item) => {
                 const Icon = item.icon;
+                const isReportBug = item.id === "report-bug";
                 return (
                   <button
                     key={item.id}
@@ -161,6 +173,8 @@ function App() {
                     className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       activeTab === item.id
                         ? "bg-purple-100 text-purple-700"
+                        : isReportBug
+                        ? "text-red-600 hover:text-red-700 hover:bg-red-50"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                     }`}
                   >
@@ -193,6 +207,7 @@ function App() {
             <div className="px-2 pt-2 pb-3 space-y-1">
               {menuItems.map((item) => {
                 const Icon = item.icon;
+                const isReportBug = item.id === "report-bug";
                 return (
                   <button
                     key={item.id}
@@ -200,6 +215,8 @@ function App() {
                     className={`w-full flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors ${
                       activeTab === item.id
                         ? "bg-purple-100 text-purple-700"
+                        : isReportBug
+                        ? "text-red-600 hover:text-red-700 hover:bg-red-50"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                     }`}
                   >

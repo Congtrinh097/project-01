@@ -148,11 +148,11 @@ class CVRecommender:
                 # Truncate extracted text for context
                 text_preview = cv.get('extracted_text', '')[:500]
                 summary = f"""
-CV {i}: {cv.get('filename', 'Unknown')}
-Similarity Score: {cv.get('similarity_score', 0):.2f}
-Preview: {text_preview}...
-Strengths: {cv.get('summary_pros', 'N/A')[:200]}...
-"""
+                            CV {i}: {cv.get('filename', 'Unknown')}
+                            Similarity Score: {cv.get('similarity_score', 0):.2f}
+                            Preview: {text_preview}...
+                            Strengths: {cv.get('summary_pros', 'N/A')[:200]}...
+                            """
                 cv_summaries.append(summary)
             
             context = "\n\n".join(cv_summaries)

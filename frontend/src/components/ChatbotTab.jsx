@@ -7,8 +7,10 @@ function ChatbotTab() {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -17,6 +19,52 @@ function ChatbotTab() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = "vi-VN"; // Vietnamese language
+
+        recognition.onstart = () => {
+          setIsListening(true);
+        };
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          setInputMessage(transcript);
+          setIsListening(false);
+        };
+
+        recognition.onerror = (event) => {
+          console.error("Speech recognition error:", event.error);
+          setIsListening(false);
+          if (event.error === "not-allowed") {
+            alert(
+              "Quyền truy cập microphone bị từ chối. Vui lòng cho phép truy cập microphone trong cài đặt trình duyệt."
+            );
+          }
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+      }
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, []);
 
   const chatMutation = useMutation(
     ({ message, history }) => sendChatMessage(message, history),
@@ -81,6 +129,25 @@ function ChatbotTab() {
   const handleClearChat = () => {
     if (window.confirm("Bạn có muốn xóa toàn bộ cuộc trò chuyện không?")) {
       setMessages([]);
+    }
+  };
+
+  const handleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      alert(
+        "Trình duyệt của bạn không hỗ trợ nhận dạng giọng nói. Vui lòng sử dụng Chrome hoặc Edge."
+      );
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      try {
+        recognitionRef.current.start();
+      } catch (error) {
+        console.error("Error starting speech recognition:", error);
+      }
     }
   };
 
@@ -283,17 +350,33 @@ function ChatbotTab() {
                         handleSendMessage(e);
                       }
                     }}
-                    placeholder="Ask anything"
+                    placeholder={
+                      isListening
+                        ? "Đang lắng nghe..."
+                        : "Nhập câu hỏi hoặc sử dụng giọng nói..."
+                    }
                     className="w-full py-2 sm:py-4 text-sm sm:text-base text-gray-900 placeholder-gray-500 bg-transparent border-none outline-none"
-                    disabled={chatMutation.isLoading}
+                    disabled={chatMutation.isLoading || isListening}
                   />
                 </div>
 
-                {/* Microphone Icon - Hidden on very small screens */}
+                {/* Microphone Icon */}
                 <button
                   type="button"
-                  className="hidden sm:block p-2 sm:p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-                  title="Voice input"
+                  onClick={handleVoiceInput}
+                  disabled={chatMutation.isLoading}
+                  className={`p-2 sm:p-3 transition-colors duration-200 rounded-full ${
+                    isListening
+                      ? "bg-red-100 text-red-600 animate-pulse"
+                      : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  } ${
+                    chatMutation.isLoading
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
+                  title={
+                    isListening ? "Đang lắng nghe..." : "Nhập bằng giọng nói"
+                  }
                 >
                   <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
@@ -318,7 +401,8 @@ function ChatbotTab() {
               </div>
             </div>
             <p className="text-xs text-gray-500 mt-1 sm:mt-2 text-center">
-              Nhấn Enter để gửi
+              Nhấn Enter để gửi • Click vào biểu tượng mic để nhập bằng giọng
+              nói
             </p>
           </form>
         </div>
