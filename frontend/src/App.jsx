@@ -144,7 +144,7 @@ function App() {
     { id: "generate", icon: FileEdit, label: "Generate CV" },
     { id: "upload", icon: Upload, label: "Upload CV" },
     { id: "history", icon: History, label: "History" },
-    { id: "report-bug", icon: Bug, label: "Report Bug" },
+    { id: "report-bug", icon: Bug, label: "Give Ideas/Bugs" },
   ];
 
   return (

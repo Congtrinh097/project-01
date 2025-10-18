@@ -126,6 +126,67 @@ class CVRecommender:
             logger.error(f"Error finding similar CVs: {str(e)}")
             raise ValueError(f"Failed to search similar CVs: {str(e)}")
     
+    def _generate_low_similarity_message(self, query: str) -> str:
+        """
+        Generate a helpful message when no CVs meet the 30% similarity threshold
+        
+        Args:
+            query: Original user query
+            
+        Returns:
+            Helpful message in appropriate language
+        """
+        try:
+            prompt = f"""
+                        You are an HR assistant. The user searched for candidates but no CVs in the database match their requirements (all similarity scores are below 30%).
+
+                        User Query: "{query}"
+
+                        Generate a polite, helpful message that:
+                        1. Apologizes that no matching CVs were found for their specific requirements
+                        2. Suggests they try rephrasing or broadening their search query
+                        3. Provides 2-3 specific tips on how to improve their search (e.g., use different keywords, be less specific, focus on core skills)
+
+                        LANGUAGE INSTRUCTIONS:
+                        - If the user query is in Vietnamese, respond entirely in Vietnamese
+                        - If the user query is in English, respond entirely in English
+                        - If the query is in another language, respond in that language
+                        - Match the tone and formality of the query
+
+                        Keep the message concise and actionable (max 150 words).
+                        """
+            
+            response = self.chat_client.chat.completions.create(
+                model=self.chat_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a helpful HR assistant that communicates clearly in multiple languages, adapting to the user's language."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                max_tokens=300,
+                temperature=0.7
+            )
+            
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            logger.error(f"Error generating low similarity message: {str(e)}")
+            # Fallback message in English
+            return """Sorry, we couldn't find any CVs that closely match your requirements (similarity < 30%).
+
+                    Suggestions to improve your search:
+                    - Try using broader or different keywords
+                    - Focus on core skills rather than specific combinations
+                    - Simplify your search criteria
+                    - Check if the required qualifications are too specific
+
+                    Please refine your query and try again."""
+    
     def generate_ai_recommendation(
         self, 
         query: str, 
@@ -236,6 +297,17 @@ Keep your response concise, professional, and actionable (max 300 words per lang
                     "query": query,
                     "results": [],
                     "ai_recommendation": "No matching CVs found in the database. Please upload some CVs first."
+                }
+            
+            # Step 2.5: Check if similarity scores are too low (< 30%)
+            max_similarity = max(cv.get('similarity_score', 0) for cv in similar_cvs)
+            if max_similarity < 0.3:
+                # Generate a helpful message based on query language
+                sorry_message = self._generate_low_similarity_message(query)
+                return {
+                    "query": query,
+                    "results": [],
+                    "ai_recommendation": sorry_message
                 }
             
             # Step 3: Generate AI recommendation
