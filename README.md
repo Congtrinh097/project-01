@@ -6,6 +6,10 @@ A full-stack web application that allows users to upload their CVs and receive A
 
 - **CV Upload**: Upload PDF or DOCX files up to 10MB
 - **AI Analysis**: Uses OpenAI GPT-4o-mini to analyze CV content
+- **Semantic Search**: Find similar CVs using vector embeddings and pgvector
+- **CV Recommendation**: Get AI-powered candidate recommendations
+- **Resume Generation**: Generate professional resumes with AI assistance
+- **AI Chatbot**: Interactive chatbot for career advice and CV questions
 - **Text Extraction**: Automatically extracts text from PDF and DOCX files
 - **Database Storage**: Stores CV metadata and analysis results in PostgreSQL
 - **Modern UI**: Clean, responsive interface built with React and TailwindCSS
@@ -15,6 +19,7 @@ A full-stack web application that allows users to upload their CVs and receive A
 ## Tech Stack
 
 ### Backend
+
 - **FastAPI**: Modern Python web framework
 - **SQLAlchemy**: ORM for database operations
 - **PostgreSQL**: Primary database
@@ -23,6 +28,7 @@ A full-stack web application that allows users to upload their CVs and receive A
 - **python-docx**: DOCX text extraction
 
 ### Frontend
+
 - **React 18**: Modern React with hooks
 - **Vite**: Fast build tool and dev server
 - **TailwindCSS**: Utility-first CSS framework
@@ -31,34 +37,41 @@ A full-stack web application that allows users to upload their CVs and receive A
 - **Lucide React**: Modern icon library
 
 ### Infrastructure
+
 - **Docker & Docker Compose**: Containerization and orchestration
-- **PostgreSQL**: Database service
+- **PostgreSQL**: Database service with pgvector extension
+- **Google Cloud Run**: Production deployment (optional)
 
 ## Quick Start
 
 ### Prerequisites
+
 - Docker and Docker Compose installed
 - OpenAI API key
 
 ### Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd cv-analyzer
    ```
 
 2. **Configure environment variables**
+
    ```bash
    cp env.example .env
    ```
-   
+
    Edit `.env` and add your OpenAI API key:
+
    ```
    OPENAI_API_KEY=your_openai_api_key_here
    ```
 
 3. **Start the application**
+
    ```bash
    docker-compose up --build
    ```
@@ -68,9 +81,53 @@ A full-stack web application that allows users to upload their CVs and receive A
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
 
+## Deployment
+
+### 🚀 Deploy to Google Cloud Run
+
+For production deployment, we provide automated deployment to Google Cloud Run:
+
+**Quick Deploy** (15 minutes):
+
+```bash
+# Windows
+deploy-cloudrun.bat
+
+# Linux/Mac
+chmod +x deploy-cloudrun.sh
+./deploy-cloudrun.sh
+```
+
+**Documentation**:
+
+- 📖 [Complete Deployment Guide](docs/GOOGLE_CLOUD_RUN_DEPLOYMENT.md) - Detailed step-by-step instructions
+- ⚡ [Quick Start Guide](docs/QUICK_START_CLOUDRUN.md) - Get running in 15 minutes
+
+**Estimated Costs**:
+
+- 🆓 **FREE Option**: $0-5/month with Supabase ([Cost Guide](docs/DEPLOYMENT_COST_SUMMARY.md))
+- 💰 **Cloud SQL**: $15-50/month for low to moderate usage
+
+**Features**:
+
+- ✅ Automatic scaling (scale to zero)
+- ✅ HTTPS enabled by default
+- ✅ Cloud SQL with pgvector
+- ✅ Secret Manager for API keys
+- ✅ CI/CD ready with Cloud Build
+- ✅ Global CDN support
+
+### Other Deployment Options
+
+- **AWS**: Deploy to ECS/Fargate with RDS PostgreSQL
+- **Azure**: Use Azure Container Instances with Azure Database for PostgreSQL
+- **DigitalOcean**: App Platform or Droplets with Managed PostgreSQL
+- **Heroku**: Simple deployment with Heroku Postgres
+
 ## API Endpoints
 
 ### Upload CV
+
 ```http
 POST /upload-cv
 Content-Type: multipart/form-data
@@ -79,16 +136,19 @@ Body: file (PDF or DOCX)
 ```
 
 ### Get CV Analysis
+
 ```http
 GET /cv/{id}
 ```
 
 ### List All CVs
+
 ```http
 GET /cv
 ```
 
 ### Health Check
+
 ```http
 GET /health
 ```
@@ -125,6 +185,7 @@ cv-analyzer/
 ## Database Schema
 
 ### CVs Table
+
 - `id`: Primary key (integer)
 - `filename`: Original filename (string)
 - `file_path`: Local file path (string)
@@ -137,15 +198,16 @@ cv-analyzer/
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OPENAI_API_KEY` | OpenAI API key (required) | - |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:password@localhost:5432/cv_analyzer` |
-| `UPLOAD_DIR` | Directory for file storage | `/tmp/uploads` |
-| `MAX_FILE_SIZE` | Maximum file size in bytes | `10485760` (10MB) |
-| `ALLOWED_EXTENSIONS` | Allowed file extensions | `pdf,docx` |
+| Variable             | Description                  | Default                                                     |
+| -------------------- | ---------------------------- | ----------------------------------------------------------- |
+| `OPENAI_API_KEY`     | OpenAI API key (required)    | -                                                           |
+| `DATABASE_URL`       | PostgreSQL connection string | `postgresql://postgres:password@localhost:5432/cv_analyzer` |
+| `UPLOAD_DIR`         | Directory for file storage   | `/tmp/uploads`                                              |
+| `MAX_FILE_SIZE`      | Maximum file size in bytes   | `10485760` (10MB)                                           |
+| `ALLOWED_EXTENSIONS` | Allowed file extensions      | `pdf,docx`                                                  |
 
 ### File Upload Limits
+
 - Maximum file size: 10MB
 - Supported formats: PDF, DOCX
 - Files are stored temporarily in `/tmp/uploads/`
@@ -153,6 +215,7 @@ cv-analyzer/
 ## Development
 
 ### Backend Development
+
 ```bash
 cd backend
 pip install -r requirements.txt
@@ -160,6 +223,7 @@ uvicorn main:app --reload
 ```
 
 ### Frontend Development
+
 ```bash
 cd frontend
 npm install
@@ -167,6 +231,7 @@ npm run dev
 ```
 
 ### Database Migration
+
 The application automatically creates database tables on startup. For production, consider using Alembic for proper migrations.
 
 ## Production Considerations
@@ -184,15 +249,18 @@ The application automatically creates database tables on startup. For production
 ### Common Issues
 
 1. **OpenAI API Key Error**
+
    - Ensure your API key is valid and has sufficient credits
    - Check the `.env` file has the correct key
 
 2. **File Upload Fails**
+
    - Check file size (max 10MB)
    - Ensure file is PDF or DOCX format
    - Verify upload directory permissions
 
 3. **Database Connection Error**
+
    - Ensure PostgreSQL is running
    - Check database credentials in `.env`
 
@@ -212,4 +280,3 @@ This project is licensed under the MIT License.
 3. Make your changes
 4. Add tests if applicable
 5. Submit a pull request
-

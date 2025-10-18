@@ -1,0 +1,137 @@
+steps:
+  # Build backend image
+  - name: "gcr.io/cloud-builders/docker"
+    id: "build-backend"
+    args:
+      - "build"
+      - "-f"
+      - "backend/Dockerfile.cloudrun"
+      - "-t"
+      - "us-central1-docker.pkg.dev/$PROJECT_ID/cv-analyzer-repo/backend:$SHORT_SHA"
+      - "-t"
+      - "us-central1-docker.pkg.dev/$PROJECT_ID/cv-analyzer-repo/backend:latest"
+      - "./backend"
+
+  # Push backend image
+  - name: "gcr.io/cloud-builders/docker"
+    id: "push-backend"
+    args:
+      - "push"
+      - "--all-tags"
+      - "us-central1-docker.pkg.dev/$PROJECT_ID/cv-analyzer-repo/backend"
+    waitFor: ["build-backend"]
+
+  # Deploy backend to Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "deploy-backend"
+    entrypoint: gcloud
+    args:
+      - "run"
+      - "deploy"
+      - "cv-analyzer-backend"
+      - "--image=us-central1-docker.pkg.dev/$PROJECT_ID/cv-analyzer-repo/backend:$SHORT_SHA"
+      - "--region=$_REGION"
+      - "--platform=managed"
+      - "--allow-unauthenticated"
+      - "--add-cloudsql-instances=$_CLOUD_SQL_CONNECTION_NAME"
+      - "--set-env-vars=DB_USER=postgres,DB_NAME=cv_analyzer,CLOUD_SQL_CONNECTION_NAME=$_CLOUD_SQL_CONNECTION_NAME,FRONTEND_URL=*"
+      - "--set-secrets=DB_PASSWORD=db-password:latest,OPENAI_API_KEY=openai-api-key:latest,OPENAI_EMBED_API_KEY=openai-embed-api-key:latest"
+      - "--memory=1Gi"
+      - "--cpu=1"
+      - "--timeout=300"
+      - "--max-instances=10"
+      - "--min-instances=0"
+    waitFor: ["push-backend"]
+
+  # Get backend URL (for frontend build)
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "get-backend-url"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        gcloud run services describe cv-analyzer-backend \
+          --region=$_REGION \
+          --format='value(status.url)' > /workspace/backend-url.txt
+        echo "Backend URL: $(cat /workspace/backend-url.txt)"
+    waitFor: ["deploy-backend"]
+
+  # Build frontend image with backend URL
+  - name: "gcr.io/cloud-builders/docker"
+    id: "build-frontend"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        BACKEND_URL=$(cat /workspace/backend-url.txt)
+        docker build \
+          -f frontend/Dockerfile.cloudrun \
+          --build-arg VITE_API_URL=$BACKEND_URL \
+          -t us-central1-docker.pkg.dev/$PROJECT_ID/cv-analyzer-repo/frontend:$SHORT_SHA \
+          -t us-central1-docker.pkg.dev/$PROJECT_ID/cv-analyzer-repo/frontend:latest \
+          ./frontend
+    waitFor: ["get-backend-url"]
+
+  # Push frontend image
+  - name: "gcr.io/cloud-builders/docker"
+    id: "push-frontend"
+    args:
+      - "push"
+      - "--all-tags"
+      - "us-central1-docker.pkg.dev/$PROJECT_ID/cv-analyzer-repo/frontend"
+    waitFor: ["build-frontend"]
+
+  # Deploy frontend to Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "deploy-frontend"
+    entrypoint: gcloud
+    args:
+      - "run"
+      - "deploy"
+      - "cv-analyzer-frontend"
+      - "--image=us-central1-docker.pkg.dev/$PROJECT_ID/cv-analyzer-repo/frontend:$SHORT_SHA"
+      - "--region=$_REGION"
+      - "--platform=managed"
+      - "--allow-unauthenticated"
+      - "--memory=512Mi"
+      - "--cpu=1"
+      - "--max-instances=10"
+      - "--min-instances=0"
+    waitFor: ["push-frontend"]
+
+  # Update backend with correct frontend URL
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: "update-backend-cors"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        FRONTEND_URL=$(gcloud run services describe cv-analyzer-frontend \
+          --region=$_REGION \
+          --format='value(status.url)')
+        gcloud run services update cv-analyzer-backend \
+          --region=$_REGION \
+          --set-env-vars="FRONTEND_URL=$FRONTEND_URL"
+        echo "Deployment complete!"
+        echo "Frontend URL: $FRONTEND_URL"
+        echo "Backend URL: $(cat /workspace/backend-url.txt)"
+    waitFor: ["deploy-frontend"]
+
+# Substitution variables (override these)
+substitutions:
+  _REGION: "us-central1"
+  _CLOUD_SQL_CONNECTION_NAME: "cv-analyzer-tlstudio:us-central1:cv-analyzer-db"
+
+# Build timeout
+timeout: "1800s"
+
+# Images to be pushed to registry
+images:
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/cv-analyzer-repo/backend:$SHORT_SHA"
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/cv-analyzer-repo/backend:latest"
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/cv-analyzer-repo/frontend:$SHORT_SHA"
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/cv-analyzer-repo/frontend:latest"
+
+options:
+  machineType: "N1_HIGHCPU_8"
+  logging: CLOUD_LOGGING_ONLY
