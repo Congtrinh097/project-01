@@ -31,10 +31,23 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Configure CORS origins
+cors_origins = ["http://localhost:3000", "http://frontend:3000"]
+
+# Add frontend URL from environment if available
+if settings.FRONTEND_URL and settings.FRONTEND_URL != "*":
+    cors_origins.append(settings.FRONTEND_URL)
+    logger.info(f"Added FRONTEND_URL to CORS origins: {settings.FRONTEND_URL}")
+
+# For production, allow all origins if FRONTEND_URL is "*"
+if settings.FRONTEND_URL == "*":
+    cors_origins = ["*"]
+    logger.warning("CORS configured to allow all origins (*)")
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://frontend:3000"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

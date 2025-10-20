@@ -19,17 +19,20 @@ class CVRecommender:
         if not settings.OPENAI_API_KEY:
             raise ValueError("OpenAI API key is required for chat completions")
         
+        # Get base URL from settings or use default
+        base_url = getattr(settings, 'OPENAI_BASE_URL', None)
+        
         # Client for embeddings
-        self.embed_client = openai.OpenAI(
-            api_key=embed_api_key,
-            base_url="https://aiportalapi.stu-platform.live/jpe"
-        )
+        if base_url:
+            self.embed_client = openai.OpenAI(api_key=embed_api_key, base_url=base_url)
+        else:
+            self.embed_client = openai.OpenAI(api_key=embed_api_key)
         
         # Client for chat completions
-        self.chat_client = openai.OpenAI(
-            api_key=settings.OPENAI_API_KEY,
-            base_url="https://aiportalapi.stu-platform.live/jpe"
-        )
+        if base_url:
+            self.chat_client = openai.OpenAI(api_key=settings.OPENAI_API_KEY, base_url=base_url)
+        else:
+            self.chat_client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
         
         self.embedding_model = "text-embedding-3-small"
         self.chat_model = "gpt-4o-mini"

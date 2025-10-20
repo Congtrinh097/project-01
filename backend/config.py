@@ -9,8 +9,12 @@ class Settings(BaseSettings):
     # OpenAI
     OPENAI_API_KEY: str = ""
     OPENAI_EMBED_API_KEY: str = ""  # Separate key for embeddings (falls back to OPENAI_API_KEY if not set)
+    OPENAI_BASE_URL: str = ""  # Custom OpenAI endpoint (leave empty for standard api.openai.com)
     HF_TOKEN: str = ""
     HF_MODEL_NAME: str = "meta-llama/Llama-3.1-8B"
+    
+    # CORS
+    FRONTEND_URL: str = "*"  # Frontend URL for CORS, use "*" to allow all origins
     
     # File upload settings
     UPLOAD_DIR: str = "/tmp/uploads"

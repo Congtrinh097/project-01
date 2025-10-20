@@ -2,6 +2,7 @@ import os
 import logging
 from typing import List, Dict, Optional
 from openai import OpenAI
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +59,8 @@ Your goal: Help the user improve their interview skills by providing realistic p
     
     def __init__(self):
         """Initialize the chatbot with OpenAI client"""
-        self.api_key = os.getenv("OPENAI_API_KEY")
-        self.base_url = os.getenv("OPENAI_BASE_URL", "https://aiportalapi.stu-platform.live/jpe")
+        self.api_key = settings.OPENAI_API_KEY
+        self.base_url = settings.OPENAI_BASE_URL
         self.model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         self.max_tokens = int(os.getenv("CHATBOT_MAX_TOKENS", "500"))
         self.temperature = float(os.getenv("CHATBOT_TEMPERATURE", "0.7"))
@@ -70,10 +71,12 @@ Your goal: Help the user improve their interview skills by providing realistic p
             self.client = None
         else:
             try:
-                self.client = OpenAI(
-                    api_key=self.api_key,
-                    base_url=self.base_url
-                )
+                if self.base_url:
+                    logger.info(f"Using custom OpenAI base URL: {self.base_url}")
+                    self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+                else:
+                    logger.info("Using standard OpenAI API endpoint")
+                    self.client = OpenAI(api_key=self.api_key)
                 logger.info("OpenAI client initialized successfully")
             except Exception as e:
                 logger.error(f"Failed to initialize OpenAI client: {e}")

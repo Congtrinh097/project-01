@@ -10,7 +10,14 @@ class CVAnalyzer:
         if not settings.OPENAI_API_KEY:
             raise ValueError("OpenAI API key is required")
         
-        self.client = openai.OpenAI(api_key=settings.OPENAI_API_KEY, base_url="https://aiportalapi.stu-platform.live/jpe")
+        # Use custom base_url if provided, otherwise use default OpenAI endpoint
+        base_url = getattr(settings, 'OPENAI_BASE_URL', None)
+        if base_url:
+            logger.info(f"Using custom OpenAI base URL: {base_url}")
+            self.client = openai.OpenAI(api_key=settings.OPENAI_API_KEY, base_url=base_url)
+        else:
+            logger.info("Using standard OpenAI API endpoint")
+            self.client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
     
     async def analyze_cv(self, cv_text: str) -> Dict[str, str]:
         """
