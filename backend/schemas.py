@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 class CVBase(BaseModel):
     filename: str
@@ -81,3 +81,45 @@ class CVRecommendResponse(BaseModel):
     query: str
     results: List[CVRecommendResult]
     ai_recommendation: str
+
+
+# Job Extraction Schemas
+class JobURLs(BaseModel):
+    urls: List[str]
+
+
+# Individual Job Schemas
+class JobResponse(BaseModel):
+    id: int
+    position: str
+    company: str
+    job_link: str
+    location: Optional[str] = None
+    working_type: Optional[str] = None
+    skills: Optional[List[str]] = []
+    responsibilities: Optional[List[str]] = []
+    education: Optional[str] = None
+    experience: Optional[str] = None
+    technical_skills: Optional[List[str]] = []
+    soft_skills: Optional[List[str]] = []
+    benefits: Optional[List[str]] = []
+    company_size: Optional[str] = None
+    why_join: Optional[List[str]] = []
+    posted: Optional[datetime] = None
+    tags: Optional[List[str]] = []
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class JobListResponse(BaseModel):
+    id: int
+    position: str
+    company: str
+    location: Optional[str] = None
+    working_type: Optional[str] = None
+    tags: Optional[List[str]] = []
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True

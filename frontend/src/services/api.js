@@ -117,3 +117,45 @@ export const recommendCVs = async (query, limit = 5) => {
   });
   return response.data;
 };
+
+// Job Management API calls
+export const getJobs = async (filters = {}) => {
+  const params = new URLSearchParams();
+  if (filters.company) params.append("company", filters.company);
+  if (filters.location) params.append("location", filters.location);
+  if (filters.working_type) params.append("working_type", filters.working_type);
+  if (filters.limit) params.append("limit", filters.limit);
+
+  const response = await api.get(`/jobs?${params.toString()}`);
+  return response.data;
+};
+
+export const getJob = async (jobId) => {
+  const response = await api.get(`/jobs/${jobId}`);
+  return response.data;
+};
+
+export const deleteJob = async (jobId) => {
+  const response = await api.delete(`/jobs/${jobId}`);
+  return response.data;
+};
+
+export const searchJobs = async (query, limit = 20) => {
+  const response = await api.get(
+    `/jobs/search?q=${encodeURIComponent(query)}&limit=${limit}`
+  );
+  return response.data;
+};
+
+// Job Extraction API calls
+export const extractJobs = async (urls) => {
+  const response = await api.post("/extract-jobs", {
+    urls,
+  });
+  return response.data;
+};
+
+export const getJobExtractionHealth = async () => {
+  const response = await api.get("/extract-jobs/health");
+  return response.data;
+};

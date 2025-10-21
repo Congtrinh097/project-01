@@ -8,14 +8,15 @@ import logging
 from datetime import datetime
 
 from database import get_db, engine
-from models import Base, CV, Resume
-from schemas import CVResponse, CVListResponse, ResumeGenerateRequest, ResumeResponse, ResumeListResponse, ChatRequest, ChatResponse, CVRecommendRequest, CVRecommendResponse
+from models import Base, CV, Resume, Job
+from schemas import CVResponse, CVListResponse, ResumeGenerateRequest, ResumeResponse, ResumeListResponse, ChatRequest, ChatResponse, CVRecommendRequest, CVRecommendResponse, JobURLs, JobResponse, JobListResponse
 from services.cv_analyzer import CVAnalyzer
 from services.file_processor import FileProcessor
 from services.resume_generator import ResumeGenerator
 from services.pdf_generator import PDFGenerator
 from services.chatbot import InterviewChatbot
 from services.cv_recommender import CVRecommender
+from services.job_extractor import JobExtractor
 from config import settings
 
 # Configure logging
@@ -60,6 +61,7 @@ resume_generator = ResumeGenerator()
 pdf_generator = PDFGenerator()
 chatbot = InterviewChatbot()
 cv_recommender = CVRecommender()
+job_extractor = JobExtractor()
 
 @app.get("/")
 async def root():
@@ -497,6 +499,205 @@ async def chatbot_health_check():
         "message": "Chatbot is ready" if is_configured else "OpenAI API key not configured",
         "model": chatbot.model_name if is_configured else None
     }
+
+
+# ============================================================================
+# JOB EXTRACTION ENDPOINTS
+# ============================================================================
+
+@app.post("/extract-jobs")
+async def extract_jobs(
+    payload: JobURLs,
+    db: Session = Depends(get_db)
+):
+    """
+    Extract job information from URLs using OpenAI and save to database.
+    
+    Returns:
+        - status: success, partial_success, or error
+        - message: Summary message
+        - extracted_data: List of extracted job data
+        - count: Total number of jobs extracted
+        - saved_count: Number of jobs successfully saved
+        - failed_count: Number of jobs that failed to save
+        - saved_job_ids: IDs of successfully saved jobs
+        - failed_jobs: List of jobs that failed with error details
+    """
+    try:
+        if not payload.urls:
+            raise HTTPException(status_code=400, detail="No URLs provided")
+        
+        # Extract job data using the service
+        logger.info(f"Extracting jobs from {len(payload.urls)} URLs")
+        extraction_result = await job_extractor.extract_jobs(payload.urls, db)
+        
+        logger.info(f"Job extraction completed: {extraction_result['saved_count']} saved, {extraction_result['failed_count']} failed")
+        
+        # Determine success message based on results
+        if extraction_result["failed_count"] == 0:
+            message = f"All {extraction_result['saved_count']} jobs extracted and saved successfully"
+            status = "success"
+        elif extraction_result["saved_count"] == 0:
+            message = f"All {extraction_result['failed_count']} jobs failed to save (likely due to embedding generation errors)"
+            status = "error"
+        else:
+            message = f"{extraction_result['saved_count']} jobs saved successfully, {extraction_result['failed_count']} failed"
+            status = "partial_success"
+        
+        return {
+            "status": status,
+            "message": message,
+            "urls": payload.urls,
+            "extracted_data": extraction_result["data"],
+            "count": extraction_result["count"],
+            "saved_count": extraction_result["saved_count"],
+            "failed_count": extraction_result["failed_count"],
+            "saved_job_ids": extraction_result["saved_job_ids"],
+            "failed_jobs": extraction_result["failed_jobs"]
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error extracting jobs: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.get("/extract-jobs/health")
+async def job_extraction_health_check():
+    """
+    Check if the job extraction service is properly configured
+    """
+    is_configured = job_extractor.is_configured()
+    return {
+        "status": "configured" if is_configured else "not_configured",
+        "message": "Job extraction is ready" if is_configured else "OpenAI API key not configured",
+        "model": job_extractor.model_name if is_configured else None
+    }
+
+
+# ============================================================================
+# INDIVIDUAL JOBS ENDPOINTS
+# ============================================================================
+
+@app.get("/jobs", response_model=List[JobListResponse])
+async def list_jobs(
+    company: str = None,
+    location: str = None,
+    working_type: str = None,
+    limit: int = 50,
+    db: Session = Depends(get_db)
+):
+    """
+    List all jobs with optional filtering
+    """
+    query = db.query(Job)
+    
+    # Apply filters
+    if company:
+        query = query.filter(Job.company.ilike(f"%{company}%"))
+    if location:
+        query = query.filter(Job.location.ilike(f"%{location}%"))
+    if working_type:
+        query = query.filter(Job.working_type.ilike(f"%{working_type}%"))
+    
+    # Apply limit and order
+    jobs = query.order_by(Job.created_at.desc()).limit(min(limit, 100)).all()
+    
+    return [
+        JobListResponse(
+            id=job.id,
+            position=job.position,
+            company=job.company,
+            location=job.location,
+            working_type=job.working_type,
+            tags=job.tags or [],
+            created_at=job.created_at
+        )
+        for job in jobs
+    ]
+
+
+@app.get("/jobs/{job_id}", response_model=JobResponse)
+async def get_job(job_id: int, db: Session = Depends(get_db)):
+    """
+    Get a specific job by ID
+    """
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    return JobResponse(
+        id=job.id,
+        position=job.position,
+        company=job.company,
+        job_link=job.job_link,
+        location=job.location,
+        working_type=job.working_type,
+        skills=job.skills or [],
+        responsibilities=job.responsibilities or [],
+        education=job.education,
+        experience=job.experience,
+        technical_skills=job.technical_skills or [],
+        soft_skills=job.soft_skills or [],
+        benefits=job.benefits or [],
+        company_size=job.company_size,
+        why_join=job.why_join or [],
+        posted=job.posted,
+        tags=job.tags or [],
+        created_at=job.created_at
+    )
+
+
+@app.delete("/jobs/{job_id}")
+async def delete_job(job_id: int, db: Session = Depends(get_db)):
+    """
+    Delete a job by ID
+    """
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Delete from database
+    db.delete(job)
+    db.commit()
+    
+    logger.info(f"Job deleted successfully: {job_id}")
+    return {"message": "Job deleted successfully", "id": job_id}
+
+
+@app.get("/jobs/search", response_model=List[JobListResponse])
+async def search_jobs(
+    q: str,
+    limit: int = 20,
+    db: Session = Depends(get_db)
+):
+    """
+    Search jobs by position, company, or tags
+    """
+    if not q or not q.strip():
+        raise HTTPException(status_code=400, detail="Search query cannot be empty")
+    
+    # Search in position, company, and tags
+    search_term = f"%{q.strip()}%"
+    jobs = db.query(Job).filter(
+        (Job.position.ilike(search_term)) |
+        (Job.company.ilike(search_term)) |
+        (Job.location.ilike(search_term))
+    ).order_by(Job.created_at.desc()).limit(min(limit, 50)).all()
+    
+    return [
+        JobListResponse(
+            id=job.id,
+            position=job.position,
+            company=job.company,
+            location=job.location,
+            working_type=job.working_type,
+            tags=job.tags or [],
+            created_at=job.created_at
+        )
+        for job in jobs
+    ]
 
 
 if __name__ == "__main__":

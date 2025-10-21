@@ -1,4 +1,5 @@
 import {
+  Briefcase,
   Bug,
   FileEdit,
   FileText,
@@ -26,6 +27,7 @@ import {
 import ChatbotTab from "./components/ChatbotTab";
 import GenerateResumeTab from "./components/GenerateResumeTab";
 import HistoryTab from "./components/HistoryTab";
+import JobsTab from "./components/JobsTab";
 import RecommendTab from "./components/RecommendTab";
 import UploadTab from "./components/UploadTab";
 
@@ -142,6 +144,7 @@ function App() {
     { id: "recommend", icon: Sparkles, label: "Recommend CVs" },
     { id: "chatbot", icon: MessageCircle, label: "Interview Bot" },
     { id: "generate", icon: FileEdit, label: "Generate CV" },
+    { id: "jobs", icon: Briefcase, label: "Jobs" },
     { id: "upload", icon: Upload, label: "Upload CV" },
     { id: "history", icon: History, label: "History" },
     { id: "report-bug", icon: Bug, label: "Give Ideas/Bugs" },
@@ -275,6 +278,8 @@ function App() {
             results={recommendResults}
           />
         )}
+
+        {activeTab === "jobs" && <JobsTab />}
       </main>
     </div>
   );
