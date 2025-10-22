@@ -1,6 +1,7 @@
 import {
   Briefcase,
   Bug,
+  ChevronDown,
   FileEdit,
   FileText,
   History,
@@ -10,7 +11,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import {
   deleteCV,
@@ -41,7 +42,9 @@ function App() {
   const [recommendResults, setRecommendResults] = useState(null);
   const [jobRecommendResults, setJobRecommendResults] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCVMenuOpen, setIsCVMenuOpen] = useState(false);
   const queryClient = useQueryClient();
+  const cvMenuRef = useRef(null);
 
   const { data: cvs = [], isLoading: cvsLoading } = useQuery("cvs", getCVs);
   const { data: resumes = [], isLoading: resumesLoading } = useQuery(
@@ -170,17 +173,39 @@ function App() {
     }
     setActiveTab(tab);
     setIsMobileMenuOpen(false); // Close mobile menu on tab change
+    setIsCVMenuOpen(false); // Close CV dropdown on tab change
   };
 
+  const handleCVMenuToggle = () => {
+    setIsCVMenuOpen(!isCVMenuOpen);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (cvMenuRef.current && !cvMenuRef.current.contains(event.target)) {
+        setIsCVMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const menuItems = [
-    { id: "recommend", icon: Sparkles, label: "Recommend CVs" },
-    { id: "job-recommend", icon: Sparkles, label: "Recommend Jobs" },
     { id: "chatbot", icon: MessageCircle, label: "Interview Bot" },
-    { id: "generate", icon: FileEdit, label: "Generate CV" },
+    { id: "recommend", icon: Sparkles, label: "CVs Recommend" },
+    { id: "job-recommend", icon: Sparkles, label: "Jobs Recommend" },
     { id: "jobs", icon: Briefcase, label: "Jobs" },
-    { id: "upload", icon: Upload, label: "Upload CV" },
-    { id: "history", icon: History, label: "History" },
     { id: "report-bug", icon: Bug, label: "Give Ideas/Bugs" },
+  ];
+
+  const cvMenuItems = [
+    { id: "upload", icon: Upload, label: "Upload CV" },
+    { id: "generate", icon: FileEdit, label: "Generate CV" },
+    { id: "history", icon: History, label: "CV History" },
   ];
 
   return (
@@ -199,6 +224,48 @@ function App() {
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex space-x-2">
+              {/* CV Management Dropdown */}
+              <div className="relative" ref={cvMenuRef}>
+                <button
+                  onClick={handleCVMenuToggle}
+                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    ["upload", "generate", "history"].includes(activeTab)
+                      ? "bg-purple-100 text-purple-700"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  <span className="hidden xl:inline">Manage CVs</span>
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </button>
+
+                {/* CV Dropdown Menu */}
+                {isCVMenuOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                    <div className="py-1">
+                      {cvMenuItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => handleTabChange(item.id)}
+                            className={`w-full flex items-center px-4 py-2 text-sm text-left transition-colors ${
+                              activeTab === item.id
+                                ? "bg-purple-50 text-purple-700"
+                                : "text-gray-700 hover:bg-gray-50"
+                            }`}
+                          >
+                            <Icon className="h-4 w-4 mr-3" />
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Other Menu Items */}
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isReportBug = item.id === "report-bug";
@@ -241,6 +308,34 @@ function App() {
         {isMobileMenuOpen && (
           <div className="lg:hidden border-t border-gray-200">
             <div className="px-2 pt-2 pb-3 space-y-1">
+              {/* CV Management Section */}
+              <div className="px-3 py-2">
+                <div className="flex items-center text-sm font-medium text-gray-500 mb-2">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Manage CVs
+                </div>
+                <div className="ml-6 space-y-1">
+                  {cvMenuItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleTabChange(item.id)}
+                        className={`w-full flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                          activeTab === item.id
+                            ? "bg-purple-100 text-purple-700"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                        }`}
+                      >
+                        <Icon className="h-5 w-5 mr-3" />
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Other Menu Items */}
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isReportBug = item.id === "report-bug";

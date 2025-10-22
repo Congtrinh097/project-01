@@ -111,7 +111,6 @@ class FileProcessor:
             os.unlink(temp_path)
             
             logger.info(f"Text extracted successfully from {filename}")
-            logger.info(f"Extracted text: {extracted_text}")
             return extracted_text
             
         except Exception as e:
