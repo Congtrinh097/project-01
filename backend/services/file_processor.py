@@ -78,4 +78,43 @@ class FileProcessor:
         except Exception as e:
             logger.error(f"Error extracting DOCX text: {str(e)}")
             raise ValueError(f"Failed to extract text from DOCX: {str(e)}")
+    
+    def extract_text(self, file_content: bytes, file_extension: str, filename: str) -> str:
+        """
+        Extract text from file content without saving to disk
+        Used for job recommendation from CV upload
+        
+        Args:
+            file_content: Raw file content as bytes
+            file_extension: File extension (pdf, docx)
+            filename: Original filename for logging
+            
+        Returns:
+            Extracted text content
+        """
+        try:
+            # Create a temporary file to process
+            import tempfile
+            with tempfile.NamedTemporaryFile(suffix=f".{file_extension}", delete=False) as temp_file:
+                temp_file.write(file_content)
+                temp_path = temp_file.name
+            
+            # Extract text based on file type
+            if file_extension == "pdf":
+                extracted_text = self._extract_pdf_text(temp_path)
+            elif file_extension == "docx":
+                extracted_text = self._extract_docx_text(temp_path)
+            else:
+                raise ValueError(f"Unsupported file type: {file_extension}")
+            
+            # Clean up temporary file
+            os.unlink(temp_path)
+            
+            logger.info(f"Text extracted successfully from {filename}")
+            logger.info(f"Extracted text: {extracted_text}")
+            return extracted_text
+            
+        except Exception as e:
+            logger.error(f"Error extracting text from {filename}: {str(e)}")
+            raise ValueError(f"Failed to extract text from {filename}: {str(e)}")
 

@@ -123,3 +123,32 @@ class JobListResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+# Job Recommendation Schemas
+class JobRecommendRequest(BaseModel):
+    query: Optional[str] = None  # Text query or CV text
+    limit: Optional[int] = 5
+
+class JobRecommendResult(BaseModel):
+    id: int
+    position: str
+    company: str
+    job_link: str
+    location: Optional[str] = None
+    working_type: Optional[str] = None
+    experience: Optional[str] = None
+    education: Optional[str] = None
+    technical_skills: Optional[List[str]] = []
+    soft_skills: Optional[List[str]] = []
+    benefits: Optional[List[str]] = []
+    tags: Optional[List[str]] = []
+    summary: Optional[str] = None
+    similarity_score: float
+    posted: Optional[str] = None
+    created_at: Optional[str] = None
+
+class JobRecommendResponse(BaseModel):
+    query: str
+    results: List[JobRecommendResult]
+    ai_recommendation: str

@@ -118,6 +118,28 @@ export const recommendCVs = async (query, limit = 5) => {
   return response.data;
 };
 
+// Job Recommendation API calls
+export const recommendJobs = async (query, limit = 5) => {
+  const response = await api.post("/job/recommend", {
+    query,
+    limit,
+  });
+  return response.data;
+};
+
+export const recommendJobsFromCV = async (file, limit = 5) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("limit", limit);
+
+  const response = await api.post("/job/recommend-from-cv", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data;
+};
+
 // Job Management API calls
 export const getJobs = async (filters = {}) => {
   const params = new URLSearchParams();

@@ -20,6 +20,8 @@ import {
   getCVs,
   getResumes,
   recommendCVs,
+  recommendJobs,
+  recommendJobsFromCV,
   uploadCV,
 } from "./services/api";
 
@@ -27,6 +29,7 @@ import {
 import ChatbotTab from "./components/ChatbotTab";
 import GenerateResumeTab from "./components/GenerateResumeTab";
 import HistoryTab from "./components/HistoryTab";
+import JobRecommendTab from "./components/JobRecommendTab";
 import JobsTab from "./components/JobsTab";
 import RecommendTab from "./components/RecommendTab";
 import UploadTab from "./components/UploadTab";
@@ -36,6 +39,7 @@ function App() {
   const [selectedCV, setSelectedCV] = useState(null);
   const [selectedResume, setSelectedResume] = useState(null);
   const [recommendResults, setRecommendResults] = useState(null);
+  const [jobRecommendResults, setJobRecommendResults] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -87,6 +91,24 @@ function App() {
     }
   );
 
+  const jobRecommendMutation = useMutation(
+    ({ query, limit }) => recommendJobs(query, limit),
+    {
+      onSuccess: (data) => {
+        setJobRecommendResults(data);
+      },
+    }
+  );
+
+  const jobRecommendFromCVMutation = useMutation(
+    ({ file, limit }) => recommendJobsFromCV(file, limit),
+    {
+      onSuccess: (data) => {
+        setJobRecommendResults(data);
+      },
+    }
+  );
+
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -126,6 +148,16 @@ function App() {
     recommendMutation.mutate({ query, limit });
   };
 
+  const handleJobRecommend = (query, limit) => {
+    setJobRecommendResults(null); // Clear previous results
+    jobRecommendMutation.mutate({ query, limit });
+  };
+
+  const handleJobRecommendFromCV = (file, limit) => {
+    setJobRecommendResults(null); // Clear previous results
+    jobRecommendFromCVMutation.mutate({ file, limit });
+  };
+
   const handleTabChange = (tab) => {
     if (tab === "report-bug") {
       window.open(
@@ -142,6 +174,7 @@ function App() {
 
   const menuItems = [
     { id: "recommend", icon: Sparkles, label: "Recommend CVs" },
+    { id: "job-recommend", icon: Sparkles, label: "Recommend Jobs" },
     { id: "chatbot", icon: MessageCircle, label: "Interview Bot" },
     { id: "generate", icon: FileEdit, label: "Generate CV" },
     { id: "jobs", icon: Briefcase, label: "Jobs" },
@@ -276,6 +309,24 @@ function App() {
               recommendMutation.error?.message
             }
             results={recommendResults}
+          />
+        )}
+
+        {activeTab === "job-recommend" && (
+          <JobRecommendTab
+            onRecommend={handleJobRecommend}
+            onRecommendFromCV={handleJobRecommendFromCV}
+            isLoading={
+              jobRecommendMutation.isLoading ||
+              jobRecommendFromCVMutation.isLoading
+            }
+            error={
+              jobRecommendMutation.error?.response?.data?.detail ||
+              jobRecommendMutation.error?.message ||
+              jobRecommendFromCVMutation.error?.response?.data?.detail ||
+              jobRecommendFromCVMutation.error?.message
+            }
+            results={jobRecommendResults}
           />
         )}
 

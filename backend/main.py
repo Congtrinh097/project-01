@@ -9,7 +9,7 @@ from datetime import datetime
 
 from database import get_db, engine
 from models import Base, CV, Resume, Job
-from schemas import CVResponse, CVListResponse, ResumeGenerateRequest, ResumeResponse, ResumeListResponse, ChatRequest, ChatResponse, CVRecommendRequest, CVRecommendResponse, JobURLs, JobResponse, JobListResponse
+from schemas import CVResponse, CVListResponse, ResumeGenerateRequest, ResumeResponse, ResumeListResponse, ChatRequest, ChatResponse, CVRecommendRequest, CVRecommendResponse, JobURLs, JobResponse, JobListResponse, JobRecommendRequest, JobRecommendResponse
 from services.cv_analyzer import CVAnalyzer
 from services.file_processor import FileProcessor
 from services.resume_generator import ResumeGenerator
@@ -17,6 +17,7 @@ from services.pdf_generator import PDFGenerator
 from services.chatbot import InterviewChatbot
 from services.cv_recommender import CVRecommender
 from services.job_extractor import JobExtractor
+from services.job_recommender import JobRecommender
 from config import settings
 
 # Configure logging
@@ -62,6 +63,7 @@ pdf_generator = PDFGenerator()
 chatbot = InterviewChatbot()
 cv_recommender = CVRecommender()
 job_extractor = JobExtractor()
+job_recommender = JobRecommender()
 
 @app.get("/")
 async def root():
@@ -282,6 +284,115 @@ async def recommend_cvs(
         raise
     except Exception as e:
         logger.error(f"Error in CV recommendation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+# ============================================================================
+# JOB RECOMMENDATION ENDPOINTS
+# ============================================================================
+
+@app.post("/job/recommend", response_model=JobRecommendResponse)
+async def recommend_jobs(
+    request: JobRecommendRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Semantic search for jobs based on a natural language query or CV content.
+    Uses vector embeddings and AI to find and recommend the most relevant job opportunities.
+    """
+    try:
+        if not request.query or not request.query.strip():
+            raise HTTPException(status_code=400, detail="Query cannot be empty")
+        
+        # Validate limit
+        limit = min(max(1, request.limit), 20)  # Between 1 and 20
+        
+        # Perform search and generate recommendation
+        logger.info(f"Processing job recommendation request: {request.query[:100]}")
+        result = job_recommender.search_and_recommend(
+            query=request.query,
+            db=db,
+            limit=limit
+        )
+        
+        return JobRecommendResponse(
+            query=result["query"],
+            results=result["results"],
+            ai_recommendation=result["ai_recommendation"]
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in job recommendation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.post("/job/recommend-from-cv")
+async def recommend_jobs_from_cv(
+    file: UploadFile = File(...),
+    limit: int = 5,
+    db: Session = Depends(get_db)
+):
+    """
+    Upload a CV file and get job recommendations based on the CV content.
+    Extracts text from the CV and performs semantic search for matching jobs.
+    """
+    try:
+        # Validate file
+        if not file.filename:
+            raise HTTPException(status_code=400, detail="No file provided")
+        
+        file_extension = file.filename.split('.')[-1].lower()
+        if file_extension not in settings.ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"File type not supported. Allowed types: {settings.ALLOWED_EXTENSIONS}"
+            )
+        
+        # Check file size
+        file_content = await file.read()
+        if len(file_content) > settings.MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"File too large. Maximum size: {settings.MAX_FILE_SIZE} bytes"
+            )
+        
+        # Extract text from the uploaded file
+        logger.info(f"Extracting text from CV: {file.filename}")
+        extracted_text = file_processor.extract_text(
+            file_content=file_content,
+            file_extension=file_extension,
+            filename=file.filename
+        )
+        
+        if not extracted_text or len(extracted_text.strip()) < 50:
+            raise HTTPException(
+                status_code=400, 
+                detail="Could not extract sufficient text from the CV. Please ensure the file contains readable text."
+            )
+        
+        # Validate limit
+        limit = min(max(1, limit), 20)  # Between 1 and 20
+        
+        # Perform search and generate recommendation using CV text
+        logger.info(f"Processing job recommendation from CV: {file.filename}")
+        result = job_recommender.search_and_recommend(
+            query=extracted_text,
+            db=db,
+            limit=limit
+        )
+        
+        return JobRecommendResponse(
+            query=f"CV: {file.filename}",
+            results=result["results"],
+            ai_recommendation=result["ai_recommendation"]
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in job recommendation from CV: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
