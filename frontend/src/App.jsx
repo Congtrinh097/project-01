@@ -36,7 +36,7 @@ import RecommendTab from "./components/RecommendTab";
 import UploadTab from "./components/UploadTab";
 
 function App() {
-  const [activeTab, setActiveTab] = useState("upload");
+  const [activeTab, setActiveTab] = useState("chatbot");
   const [selectedCV, setSelectedCV] = useState(null);
   const [selectedResume, setSelectedResume] = useState(null);
   const [recommendResults, setRecommendResults] = useState(null);

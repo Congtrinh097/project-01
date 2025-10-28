@@ -104,6 +104,22 @@ export const sendChatMessage = async (message, conversationHistory = []) => {
   return response.data;
 };
 
+export const sendChatMessageWithAudio = async (
+  message,
+  conversationHistory = []
+) => {
+  const response = await api.post("/chatbot/audio", {
+    message,
+    conversation_history: conversationHistory,
+  });
+  return response.data;
+};
+
+export const getTTSStatus = async () => {
+  const response = await api.get("/chatbot/tts-status");
+  return response.data;
+};
+
 export const chatbotHealthCheck = async () => {
   const response = await api.get("/chatbot/health");
   return response.data;

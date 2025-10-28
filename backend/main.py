@@ -18,6 +18,7 @@ from services.chatbot import InterviewChatbot
 from services.cv_recommender import CVRecommender
 from services.job_extractor import JobExtractor
 from services.job_recommender import JobRecommender
+from services.piper_tts import piper_tts
 from config import settings
 
 # Configure logging
@@ -587,6 +588,11 @@ async def chatbot_options():
     """Handle CORS preflight requests for chatbot endpoint"""
     return {"message": "OK"}
 
+@app.options("/chatbot/audio")
+async def chatbot_audio_options():
+    """Handle CORS preflight requests for chatbot audio endpoint"""
+    return {"message": "OK"}
+
 @app.post("/chatbot", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """
@@ -633,6 +639,65 @@ async def chatbot_health_check():
         "status": "configured" if is_configured else "not_configured",
         "message": "Chatbot is ready" if is_configured else "OpenAI API key not configured",
         "model": chatbot.model_name if is_configured else None
+    }
+
+
+@app.post("/chatbot/audio")
+async def chat_with_audio(request: ChatRequest):
+    """
+    Send a message to the interview practice chatbot and get both text and audio response
+    """
+    try:
+        if not request.message or not request.message.strip():
+            raise HTTPException(status_code=400, detail="Message cannot be empty")
+        
+        # Convert conversation history to the format expected by the chatbot
+        conversation_history = []
+        if request.conversation_history:
+            conversation_history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in request.conversation_history
+            ]
+        
+        # Get text response from chatbot
+        logger.info(f"Processing chat message with audio: {request.message[:50]}...")
+        response_text = chatbot.get_response(
+            user_input=request.message,
+            conversation_history=conversation_history
+        )
+        
+        # Generate audio response using Piper TTS
+        audio_data = None
+        if piper_tts.is_available():
+            try:
+                audio_data = piper_tts.synthesize_speech(response_text, language="vi")
+                logger.info("✅ Generated audio response")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to generate audio: {e}")
+        
+        # Return response with both text and audio
+        response_data = {
+            "response": response_text,
+            "timestamp": datetime.utcnow().isoformat(),
+            "has_audio": audio_data is not None,
+            "audio_data": audio_data.hex() if audio_data else None
+        }
+        
+        return response_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in chatbot with audio: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.get("/chatbot/tts-status")
+async def tts_status():
+    """Check TTS service status"""
+    return {
+        "available": piper_tts.is_available(),
+        "languages": piper_tts.get_available_languages()
     }
 
 

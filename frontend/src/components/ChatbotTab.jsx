@@ -1,16 +1,23 @@
-import { ArrowUp, MessageCircle, Mic } from "lucide-react";
+import { ArrowUp, MessageCircle, Mic, Volume2, VolumeX } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import { useMutation } from "react-query";
-import { sendChatMessage } from "../services/api";
+import { useMutation, useQuery } from "react-query";
+import {
+  getTTSStatus,
+  sendChatMessage,
+  sendChatMessageWithAudio,
+} from "../services/api";
 
 function ChatbotTab() {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(true);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const recognitionRef = useRef(null);
+  const audioRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -19,6 +26,20 @@ function ChatbotTab() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Check TTS status on component mount
+  const { data: ttsStatus } = useQuery("tts-status", getTTSStatus, {
+    onSuccess: (data) => {
+      if (!data.available) {
+        setTtsEnabled(false);
+        console.log("TTS not available, audio responses disabled");
+      }
+    },
+    onError: () => {
+      setTtsEnabled(false);
+      console.log("Failed to check TTS status, audio responses disabled");
+    },
+  });
 
   // Initialize speech recognition
   useEffect(() => {
@@ -63,22 +84,76 @@ function ChatbotTab() {
       if (recognitionRef.current) {
         recognitionRef.current.abort();
       }
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
     };
   }, []);
 
+  // Audio handling functions
+  const playAudio = (audioData) => {
+    if (!audioData) return;
+
+    try {
+      // Convert hex string back to bytes
+      const bytes = new Uint8Array(
+        audioData.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
+      );
+      const blob = new Blob([bytes], { type: "audio/wav" });
+      const audioUrl = URL.createObjectURL(blob);
+
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+
+      audio.onplay = () => setIsPlaying(true);
+      audio.onended = () => {
+        setIsPlaying(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      audio.onerror = () => {
+        setIsPlaying(false);
+        URL.revokeObjectURL(audioUrl);
+        console.error("Error playing audio");
+      };
+
+      audio.play();
+    } catch (error) {
+      console.error("Error creating audio:", error);
+      setIsPlaying(false);
+    }
+  };
+
+  const stopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsPlaying(false);
+    }
+  };
+
   const chatMutation = useMutation(
-    ({ message, history }) => sendChatMessage(message, history),
+    ({ message, history, withAudio }) =>
+      withAudio
+        ? sendChatMessageWithAudio(message, history)
+        : sendChatMessage(message, history),
     {
       onSuccess: (data) => {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: data.response,
-            timestamp: data.timestamp,
-          },
-        ]);
+        const newMessage = {
+          role: "assistant",
+          content: data.response,
+          timestamp: data.timestamp,
+          hasAudio: data.has_audio,
+          audioData: data.audio_data,
+        };
+
+        setMessages((prev) => [...prev, newMessage]);
         setIsTyping(false);
+
+        // Auto-play audio if available and TTS is enabled
+        if (data.has_audio && data.audio_data && ttsEnabled) {
+          setTimeout(() => playAudio(data.audio_data), 500); // Small delay for better UX
+        }
       },
       onError: (error) => {
         console.error("Chat error:", error);
@@ -119,10 +194,11 @@ function ChatbotTab() {
       content: msg.content,
     }));
 
-    // Send to API
+    // Send to API with audio if enabled
     chatMutation.mutate({
       message: userMessage,
       history: conversationHistory,
+      withAudio: ttsEnabled,
     });
   };
 
@@ -168,14 +244,34 @@ function ChatbotTab() {
                 </p>
               </div>
             </div>
-            {messages.length > 0 && (
+            <div className="flex items-center gap-2">
+              {/* TTS Toggle */}
               <button
-                onClick={handleClearChat}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-xs sm:text-sm font-medium transition-colors self-start sm:self-auto"
+                onClick={() => setTtsEnabled(!ttsEnabled)}
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                  ttsEnabled
+                    ? "bg-white bg-opacity-20 hover:bg-opacity-30"
+                    : "bg-white bg-opacity-10 hover:bg-opacity-20"
+                }`}
+                title={ttsEnabled ? "Tắt phát âm" : "Bật phát âm"}
               >
-                Xóa cuộc trò chuyện
+                {ttsEnabled ? (
+                  <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                ) : (
+                  <VolumeX className="h-4 w-4 sm:h-5 sm:w-5" />
+                )}
               </button>
-            )}
+
+              {/* Clear Chat */}
+              {messages.length > 0 && (
+                <button
+                  onClick={handleClearChat}
+                  className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-xs sm:text-sm font-medium transition-colors"
+                >
+                  Xóa cuộc trò chuyện
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -284,21 +380,49 @@ function ChatbotTab() {
                         <div className="whitespace-pre-wrap break-words text-sm sm:text-base">
                           {message.content}
                         </div>
-                        <p
-                          className={`text-xs mt-1 sm:mt-2 ${
-                            message.role === "user"
-                              ? "text-purple-100"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          {new Date(message.timestamp).toLocaleTimeString(
-                            "vi-VN",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </p>
+                        <div className="flex items-center justify-between mt-1 sm:mt-2">
+                          <p
+                            className={`text-xs ${
+                              message.role === "user"
+                                ? "text-purple-100"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            {new Date(message.timestamp).toLocaleTimeString(
+                              "vi-VN",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </p>
+                          {/* Audio Play Button for Assistant Messages */}
+                          {message.role === "assistant" &&
+                            message.hasAudio &&
+                            message.audioData && (
+                              <button
+                                onClick={() => {
+                                  if (isPlaying) {
+                                    stopAudio();
+                                  } else {
+                                    playAudio(message.audioData);
+                                  }
+                                }}
+                                className={`ml-2 p-1 rounded-full transition-colors ${
+                                  isPlaying
+                                    ? "bg-red-100 text-red-600"
+                                    : "bg-purple-100 text-purple-600 hover:bg-purple-200"
+                                }`}
+                                title={isPlaying ? "Dừng phát âm" : "Phát âm"}
+                              >
+                                {isPlaying ? (
+                                  <VolumeX className="h-3 w-3" />
+                                ) : (
+                                  <Volume2 className="h-3 w-3" />
+                                )}
+                              </button>
+                            )}
+                        </div>
                       </div>
                     </div>
                   </div>
