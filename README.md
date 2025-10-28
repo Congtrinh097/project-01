@@ -2,6 +2,10 @@
 
 A full-stack web application that allows users to upload their CVs and receive AI-powered analysis using OpenAI's GPT-4o-mini model. The application extracts strengths and areas for improvement from uploaded CVs.
 
+## Demo
+
+Web App: https://cv-analyzer-frontend-68349950319.us-central1.run.app/
+
 ## Features
 
 - **CV Upload**: Upload PDF or DOCX files up to 10MB

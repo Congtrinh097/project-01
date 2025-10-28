@@ -34,7 +34,11 @@ app = FastAPI(
 )
 
 # Configure CORS origins
-cors_origins = ["http://localhost:3000", "http://frontend:3000"]
+cors_origins = [
+    "http://localhost:3000", 
+    "http://frontend:3000",
+    "https://cv-analyzer-frontend-68349950319.us-central1.run.app"
+]
 
 # Add frontend URL from environment if available
 if settings.FRONTEND_URL and settings.FRONTEND_URL != "*":
@@ -51,7 +55,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -72,6 +76,11 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.utcnow()}
+
+@app.options("/upload-cv")
+async def upload_cv_options():
+    """Handle CORS preflight requests for upload-cv endpoint"""
+    return {"message": "OK"}
 
 @app.post("/upload-cv", response_model=CVResponse)
 async def upload_cv(
@@ -291,6 +300,11 @@ async def recommend_cvs(
 # JOB RECOMMENDATION ENDPOINTS
 # ============================================================================
 
+@app.options("/job/recommend")
+async def job_recommend_options():
+    """Handle CORS preflight requests for job recommend endpoint"""
+    return {"message": "OK"}
+
 @app.post("/job/recommend", response_model=JobRecommendResponse)
 async def recommend_jobs(
     request: JobRecommendRequest,
@@ -327,6 +341,11 @@ async def recommend_jobs(
         logger.error(f"Error in job recommendation: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+
+@app.options("/job/recommend-from-cv")
+async def job_recommend_from_cv_options():
+    """Handle CORS preflight requests for job recommend from CV endpoint"""
+    return {"message": "OK"}
 
 @app.post("/job/recommend-from-cv")
 async def recommend_jobs_from_cv(
@@ -562,6 +581,11 @@ async def delete_resume(resume_id: int, db: Session = Depends(get_db)):
 # ============================================================================
 # CHATBOT ENDPOINTS
 # ============================================================================
+
+@app.options("/chatbot")
+async def chatbot_options():
+    """Handle CORS preflight requests for chatbot endpoint"""
+    return {"message": "OK"}
 
 @app.post("/chatbot", response_model=ChatResponse)
 async def chat(request: ChatRequest):
