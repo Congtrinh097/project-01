@@ -9,12 +9,13 @@ from datetime import datetime
 
 from database import get_db, engine
 from models import Base, CV, Resume, Job
-from schemas import CVResponse, CVListResponse, ResumeGenerateRequest, ResumeResponse, ResumeListResponse, ChatRequest, ChatResponse, CVRecommendRequest, CVRecommendResponse, JobURLs, JobResponse, JobListResponse, JobRecommendRequest, JobRecommendResponse
+from schemas import CVResponse, CVListResponse, ResumeGenerateRequest, ResumeResponse, ResumeListResponse, ChatRequest, ChatResponse, MainBotRequest, MainBotResponse, CVRecommendRequest, CVRecommendResponse, JobURLs, JobResponse, JobListResponse, JobRecommendRequest, JobRecommendResponse
 from services.cv_analyzer import CVAnalyzer
 from services.file_processor import FileProcessor
 from services.resume_generator import ResumeGenerator
 from services.pdf_generator import PDFGenerator
 from services.chatbot import InterviewChatbot
+from services.main_bot import MainBot
 from services.cv_recommender import CVRecommender
 from services.job_extractor import JobExtractor
 from services.job_recommender import JobRecommender
@@ -66,6 +67,7 @@ file_processor = FileProcessor()
 resume_generator = ResumeGenerator()
 pdf_generator = PDFGenerator()
 chatbot = InterviewChatbot()
+main_bot = MainBot()
 cv_recommender = CVRecommender()
 job_extractor = JobExtractor()
 job_recommender = JobRecommender()
@@ -695,6 +697,128 @@ async def chat_with_audio(request: ChatRequest):
 @app.get("/chatbot/tts-status")
 async def tts_status():
     """Check TTS service status"""
+    return {
+        "available": piper_tts.is_available(),
+        "languages": piper_tts.get_available_languages()
+    }
+
+
+# ============================================================================
+# MAIN BOT ENDPOINTS
+# ============================================================================
+
+@app.options("/main-bot")
+async def main_bot_options():
+    """Handle CORS preflight requests for main-bot endpoint"""
+    return {"message": "OK"}
+
+@app.options("/main-bot/audio")
+async def main_bot_audio_options():
+    """Handle CORS preflight requests for main-bot audio endpoint"""
+    return {"message": "OK"}
+
+@app.post("/main-bot", response_model=MainBotResponse)
+async def main_bot_chat(request: MainBotRequest):
+    """
+    Send a message to the Main Bot and get a response using RAG
+    """
+    try:
+        if not request.message or not request.message.strip():
+            raise HTTPException(status_code=400, detail="Message cannot be empty")
+        
+        # Convert conversation history to the format expected by the main bot
+        conversation_history = []
+        if request.conversation_history:
+            conversation_history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in request.conversation_history
+            ]
+        
+        # Get response from main bot
+        logger.info(f"Processing Main Bot message: {request.message[:50]}...")
+        response_text = main_bot.get_response(
+            user_input=request.message,
+            conversation_history=conversation_history
+        )
+        
+        return MainBotResponse(
+            response=response_text,
+            timestamp=datetime.utcnow()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in Main Bot endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.post("/main-bot/audio")
+async def main_bot_chat_with_audio(request: MainBotRequest):
+    """
+    Send a message to the Main Bot and get both text and audio response
+    """
+    try:
+        if not request.message or not request.message.strip():
+            raise HTTPException(status_code=400, detail="Message cannot be empty")
+        
+        # Convert conversation history to the format expected by the main bot
+        conversation_history = []
+        if request.conversation_history:
+            conversation_history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in request.conversation_history
+            ]
+        
+        # Get text response from main bot
+        logger.info(f"Processing Main Bot message with audio: {request.message[:50]}...")
+        response_text = main_bot.get_response(
+            user_input=request.message,
+            conversation_history=conversation_history
+        )
+        
+        # Generate audio response using Piper TTS
+        audio_data = None
+        if piper_tts.is_available():
+            try:
+                audio_data = piper_tts.synthesize_speech(response_text, language="vi")
+                logger.info("✅ Generated audio response for Main Bot")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to generate audio for Main Bot: {e}")
+        
+        # Return response with both text and audio
+        response_data = {
+            "response": response_text,
+            "timestamp": datetime.utcnow().isoformat(),
+            "has_audio": audio_data is not None,
+            "audio_data": audio_data.hex() if audio_data else None
+        }
+        
+        return response_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in Main Bot with audio: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.get("/main-bot/health")
+async def main_bot_health_check():
+    """
+    Check if the Main Bot service is properly configured
+    """
+    is_configured = main_bot.client is not None
+    return {
+        "status": "configured" if is_configured else "not_configured",
+        "message": "Main Bot is ready" if is_configured else "OpenAI API key not configured",
+        "model": main_bot.model_name if is_configured else None
+    }
+
+
+@app.get("/main-bot/tts-status")
+async def main_bot_tts_status():
+    """Check TTS service status for Main Bot"""
     return {
         "available": piper_tts.is_available(),
         "languages": piper_tts.get_available_languages()

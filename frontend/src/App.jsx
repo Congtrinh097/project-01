@@ -1,4 +1,5 @@
 import {
+  Bot,
   Briefcase,
   Bug,
   ChevronDown,
@@ -32,11 +33,12 @@ import GenerateResumeTab from "./components/GenerateResumeTab";
 import HistoryTab from "./components/HistoryTab";
 import JobRecommendTab from "./components/JobRecommendTab";
 import JobsTab from "./components/JobsTab";
+import MainBotTab from "./components/MainBotTab";
 import RecommendTab from "./components/RecommendTab";
 import UploadTab from "./components/UploadTab";
 
 function App() {
-  const [activeTab, setActiveTab] = useState("chatbot");
+  const [activeTab, setActiveTab] = useState("main-bot");
   const [selectedCV, setSelectedCV] = useState(null);
   const [selectedResume, setSelectedResume] = useState(null);
   const [recommendResults, setRecommendResults] = useState(null);
@@ -195,6 +197,7 @@ function App() {
   }, []);
 
   const menuItems = [
+    { id: "main-bot", icon: Bot, label: "Main Bot" },
     { id: "chatbot", icon: MessageCircle, label: "Interview Bot" },
     { id: "recommend", icon: Sparkles, label: "CVs Recommend" },
     { id: "job-recommend", icon: Sparkles, label: "Jobs Recommend" },
@@ -404,6 +407,8 @@ function App() {
             isDeleting={deleteMutation.isLoading}
           />
         )}
+
+        {activeTab === "main-bot" && <MainBotTab />}
 
         {activeTab === "chatbot" && <ChatbotTab />}
 

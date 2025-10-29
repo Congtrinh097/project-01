@@ -125,6 +125,36 @@ export const chatbotHealthCheck = async () => {
   return response.data;
 };
 
+// Main Bot API calls
+export const sendMainBotMessage = async (message, conversationHistory = []) => {
+  const response = await api.post("/main-bot", {
+    message,
+    conversation_history: conversationHistory,
+  });
+  return response.data;
+};
+
+export const sendMainBotMessageWithAudio = async (
+  message,
+  conversationHistory = []
+) => {
+  const response = await api.post("/main-bot/audio", {
+    message,
+    conversation_history: conversationHistory,
+  });
+  return response.data;
+};
+
+export const getMainBotTTSStatus = async () => {
+  const response = await api.get("/main-bot/tts-status");
+  return response.data;
+};
+
+export const mainBotHealthCheck = async () => {
+  const response = await api.get("/main-bot/health");
+  return response.data;
+};
+
 // CV Recommendation API calls
 export const recommendCVs = async (query, limit = 5) => {
   const response = await api.post("/cv/recommend", {

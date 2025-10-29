@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     HF_TOKEN: str = ""
     HF_MODEL_NAME: str = "meta-llama/Llama-3.1-8B"
     
+    # Tavily (optional for web search)
+    TAVILY_API_KEY: str = ""
+    
     # CORS
     FRONTEND_URL: str = "*"  # Frontend URL for CORS, use "*" to allow all origins
     

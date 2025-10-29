@@ -63,6 +63,15 @@ class ChatResponse(BaseModel):
     response: str
     timestamp: datetime
 
+# Main Bot Schemas (same as Chatbot for consistency)
+class MainBotRequest(BaseModel):
+    message: str
+    conversation_history: Optional[List[ChatMessage]] = []
+
+class MainBotResponse(BaseModel):
+    response: str
+    timestamp: datetime
+
 
 # CV Recommendation Schemas
 class CVRecommendRequest(BaseModel):
