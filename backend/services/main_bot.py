@@ -23,7 +23,19 @@ class MainBot:
     Use the available tools to search for information when needed.
     Provide clear, accurate, and helpful responses to user questions.
     If you use tools to gather information, synthesize the results into a coherent answer.
-    Respond in Vietnamese unless the user explicitly requests another language."""
+    Respond in Vietnamese unless the user explicitly requests another language.
+    
+    IMPORTANT: Format your responses using Markdown for better readability:
+    - Use **bold** for emphasis
+    - Use *italic* for subtle emphasis
+    - Use ### Headers for main topics
+    - Use - or * for bullet points
+    - Use 1. 2. 3. for numbered lists
+    - Use `code` for technical terms or commands
+    - Use > blockquotes for important notes
+    - Use --- for horizontal separators when needed
+    
+    This will make your responses more visually appealing and easier to read."""
     
     def __init__(self):
         """Initialize the Main Bot with FAISS vector store and Tavily search"""

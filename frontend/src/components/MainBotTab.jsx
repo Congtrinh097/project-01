@@ -1,6 +1,7 @@
 import { ArrowUp, Bot, Mic, Volume2, VolumeX } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "react-query";
+import ReactMarkdown from "react-markdown";
 import {
   getMainBotTTSStatus,
   sendMainBotMessage,
@@ -286,10 +287,14 @@ function MainBotTab() {
               <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
                 Chào mừng đến với Main Bot
               </h3>
-              <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6 max-w-md">
-                Tôi là trợ lý AI thông minh với khả năng tìm kiếm thông tin từ
-                nhiều nguồn. Hãy hỏi tôi bất cứ điều gì bạn muốn biết!
-              </p>
+              <div className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6 max-w-md">
+                <p className="mb-2">
+                  Tôi là trợ lý AI thông minh với khả năng tìm kiếm thông tin từ nhiều nguồn.
+                </p>
+                <p className="font-medium">
+                  Hãy hỏi tôi bất cứ điều gì bạn muốn biết!
+                </p>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 max-w-2xl w-full">
                 <button
                   onClick={() =>
@@ -378,8 +383,56 @@ function MainBotTab() {
                         />
                       )}
                       <div className="flex-1">
-                        <div className="whitespace-pre-wrap break-words text-sm sm:text-base">
-                          {message.content}
+                        <div className="prose prose-sm sm:prose-base max-w-none break-words">
+                          <ReactMarkdown
+                            components={{
+                              // Custom styling for markdown elements
+                              p: ({ children }) => (
+                                <p className="mb-2 last:mb-0">{children}</p>
+                              ),
+                              h1: ({ children }) => (
+                                <h1 className="text-lg font-bold mb-2">{children}</h1>
+                              ),
+                              h2: ({ children }) => (
+                                <h2 className="text-base font-bold mb-2">{children}</h2>
+                              ),
+                              h3: ({ children }) => (
+                                <h3 className="text-sm font-bold mb-1">{children}</h3>
+                              ),
+                              ul: ({ children }) => (
+                                <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>
+                              ),
+                              ol: ({ children }) => (
+                                <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>
+                              ),
+                              li: ({ children }) => (
+                                <li className="text-sm">{children}</li>
+                              ),
+                              code: ({ children }) => (
+                                <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">
+                                  {children}
+                                </code>
+                              ),
+                              pre: ({ children }) => (
+                                <pre className="bg-gray-100 p-2 rounded text-xs font-mono overflow-x-auto mb-2">
+                                  {children}
+                                </pre>
+                              ),
+                              blockquote: ({ children }) => (
+                                <blockquote className="border-l-4 border-blue-300 pl-3 italic mb-2">
+                                  {children}
+                                </blockquote>
+                              ),
+                              strong: ({ children }) => (
+                                <strong className="font-semibold">{children}</strong>
+                              ),
+                              em: ({ children }) => (
+                                <em className="italic">{children}</em>
+                              ),
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
                         </div>
                         <div className="flex items-center justify-between mt-1 sm:mt-2">
                           <p
