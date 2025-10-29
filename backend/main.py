@@ -21,6 +21,7 @@ from services.job_extractor import JobExtractor
 from services.job_recommender import JobRecommender
 from services.piper_tts import piper_tts
 from config import settings
+import re
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +29,44 @@ logger = logging.getLogger(__name__)
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
+
+def clean_markdown_for_tts(text: str) -> str:
+    """
+    Remove markdown formatting characters for TTS audio generation
+    """
+    if not text:
+        return text
+    
+    # Remove markdown headers
+    text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+    
+    # Remove bold and italic formatting
+    text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)  # **bold** -> bold
+    text = re.sub(r'\*([^*]+)\*', r'\1', text)      # *italic* -> italic
+    text = re.sub(r'__([^_]+)__', r'\1', text)      # __bold__ -> bold
+    text = re.sub(r'_([^_]+)_', r'\1', text)        # _italic_ -> italic
+    
+    # Remove code formatting
+    text = re.sub(r'`([^`]+)`', r'\1', text)        # `code` -> code
+    text = re.sub(r'```[\s\S]*?```', '', text)      # Remove code blocks
+    
+    # Remove blockquotes
+    text = re.sub(r'^>\s*', '', text, flags=re.MULTILINE)
+    
+    # Remove horizontal rules
+    text = re.sub(r'^---+$', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^\*\*\*+$', '', text, flags=re.MULTILINE)
+    
+    # Remove list markers
+    text = re.sub(r'^[\s]*[-*+]\s+', '', text, flags=re.MULTILINE)  # - * + lists
+    text = re.sub(r'^[\s]*\d+\.\s+', '', text, flags=re.MULTILINE)  # 1. 2. lists
+    
+    # Remove extra whitespace and clean up
+    text = re.sub(r'\n\s*\n', '\n', text)  # Remove multiple newlines
+    text = re.sub(r'^\s+|\s+$', '', text, flags=re.MULTILINE)  # Trim lines
+    text = text.strip()
+    
+    return text
 
 app = FastAPI(
     title="CV Analyzer API",
@@ -672,7 +711,9 @@ async def chat_with_audio(request: ChatRequest):
         audio_data = None
         if piper_tts.is_available():
             try:
-                audio_data = piper_tts.synthesize_speech(response_text, language="vi")
+                # Clean markdown formatting for TTS
+                clean_text = clean_markdown_for_tts(response_text)
+                audio_data = piper_tts.synthesize_speech(clean_text, language="vi")
                 logger.info("✅ Generated audio response")
             except Exception as e:
                 logger.warning(f"⚠️ Failed to generate audio: {e}")
@@ -781,7 +822,9 @@ async def main_bot_chat_with_audio(request: MainBotRequest):
         audio_data = None
         if piper_tts.is_available():
             try:
-                audio_data = piper_tts.synthesize_speech(response_text, language="vi")
+                # Clean markdown formatting for TTS
+                clean_text = clean_markdown_for_tts(response_text)
+                audio_data = piper_tts.synthesize_speech(clean_text, language="vi")
                 logger.info("✅ Generated audio response for Main Bot")
             except Exception as e:
                 logger.warning(f"⚠️ Failed to generate audio for Main Bot: {e}")
