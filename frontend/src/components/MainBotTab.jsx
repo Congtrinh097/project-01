@@ -1,7 +1,7 @@
 import { ArrowUp, Bot, Mic, Volume2, VolumeX } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import { useMutation, useQuery } from "react-query";
 import ReactMarkdown from "react-markdown";
+import { useMutation, useQuery } from "react-query";
 import {
   getMainBotTTSStatus,
   sendMainBotMessage,
@@ -234,7 +234,7 @@ function MainBotTab() {
 
   return (
     <div className="max-w-7xl mx-auto h-full">
-      <div className="card overflow-hidden flex flex-col h-[calc(100vh-10rem)] sm:h-[calc(100vh-12rem)] lg:h-[calc(100vh-14rem)]">
+      <div className="card overflow-hidden flex flex-col h-[calc(100vh-7rem)] sm:h-[calc(100vh-8rem)] lg:h-[calc(100vh-9rem)]">
         {/* Chat Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 sm:p-6 flex-shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -289,7 +289,8 @@ function MainBotTab() {
               </h3>
               <div className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6 max-w-md">
                 <p className="mb-2">
-                  Tôi là trợ lý AI thông minh với khả năng tìm kiếm thông tin từ nhiều nguồn.
+                  Tôi là trợ lý AI thông minh với khả năng tìm kiếm thông tin từ
+                  nhiều nguồn.
                 </p>
                 <p className="font-medium">
                   Hãy hỏi tôi bất cứ điều gì bạn muốn biết!
@@ -391,19 +392,29 @@ function MainBotTab() {
                                 <p className="mb-2 last:mb-0">{children}</p>
                               ),
                               h1: ({ children }) => (
-                                <h1 className="text-lg font-bold mb-2">{children}</h1>
+                                <h1 className="text-lg font-bold mb-2">
+                                  {children}
+                                </h1>
                               ),
                               h2: ({ children }) => (
-                                <h2 className="text-base font-bold mb-2">{children}</h2>
+                                <h2 className="text-base font-bold mb-2">
+                                  {children}
+                                </h2>
                               ),
                               h3: ({ children }) => (
-                                <h3 className="text-sm font-bold mb-1">{children}</h3>
+                                <h3 className="text-sm font-bold mb-1">
+                                  {children}
+                                </h3>
                               ),
                               ul: ({ children }) => (
-                                <ul className="list-disc list-inside mb-2 space-y-1">{children}</ul>
+                                <ul className="list-disc list-inside mb-2 space-y-1">
+                                  {children}
+                                </ul>
                               ),
                               ol: ({ children }) => (
-                                <ol className="list-decimal list-inside mb-2 space-y-1">{children}</ol>
+                                <ol className="list-decimal list-inside mb-2 space-y-1">
+                                  {children}
+                                </ol>
                               ),
                               li: ({ children }) => (
                                 <li className="text-sm">{children}</li>
@@ -424,7 +435,9 @@ function MainBotTab() {
                                 </blockquote>
                               ),
                               strong: ({ children }) => (
-                                <strong className="font-semibold">{children}</strong>
+                                <strong className="font-semibold">
+                                  {children}
+                                </strong>
                               ),
                               em: ({ children }) => (
                                 <em className="italic">{children}</em>
@@ -438,7 +451,7 @@ function MainBotTab() {
                           <p
                             className={`text-xs ${
                               message.role === "user"
-                                ? "text-blue-100"
+                                ? "text-white"
                                 : "text-gray-400"
                             }`}
                           >

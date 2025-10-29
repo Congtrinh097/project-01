@@ -229,7 +229,7 @@ function ChatbotTab() {
 
   return (
     <div className="max-w-7xl mx-auto h-full">
-      <div className="card overflow-hidden flex flex-col h-[calc(100vh-10rem)] sm:h-[calc(100vh-12rem)] lg:h-[calc(100vh-14rem)]">
+      <div className="card overflow-hidden flex flex-col h-[calc(100vh-7rem)] sm:h-[calc(100vh-8rem)] lg:h-[calc(100vh-9rem)]">
         {/* Chat Header */}
         <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-4 sm:p-6 flex-shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
