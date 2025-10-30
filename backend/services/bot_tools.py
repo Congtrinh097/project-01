@@ -1,5 +1,6 @@
 import logging
 import json
+import time
 from langchain_core.tools import tool
 from database import SessionLocal
 from models import Job
@@ -12,11 +13,18 @@ logger = logging.getLogger(__name__)
 @tool
 def get_total_jobs_count() -> str:
     """Returns the total number of jobs in the database as text."""
+    start_time = time.perf_counter()
+    logger.info("Tool get_total_jobs_count: start")
     session = None
     try:
         session = SessionLocal()
         total = session.query(Job).count()
-        return str(total)
+        result = str(total)
+        logger.info(
+            "Tool get_total_jobs_count: success", 
+            extra={"total": total, "duration_ms": int((time.perf_counter()-start_time)*1000)}
+        )
+        return result
     except Exception as e:
         logger.error(f"Error counting jobs: {e}")
         return f"Error counting jobs: {str(e)}"
@@ -32,6 +40,11 @@ def get_jobs_summary_by_technical_skills(top_n: int = 20) -> str:
     Args:
         top_n: Maximum number of skills to return, sorted by count desc.
     """
+    start_time = time.perf_counter()
+    logger.info(
+        "Tool get_jobs_summary_by_technical_skills: start", 
+        extra={"top_n": top_n}
+    )
     session = None
     try:
         session = SessionLocal()
@@ -65,7 +78,16 @@ def get_jobs_summary_by_technical_skills(top_n: int = 20) -> str:
                 {"skill": name, "count": count} for name, count in sorted_counts
             ],
         }
-        return json.dumps(payload, ensure_ascii=False)
+        result = json.dumps(payload, ensure_ascii=False)
+        logger.info(
+            "Tool get_jobs_summary_by_technical_skills: success",
+            extra={
+                "total_jobs": total_jobs,
+                "returned_skills": len(payload["skills_count"]),
+                "duration_ms": int((time.perf_counter()-start_time)*1000)
+            }
+        )
+        return result
     except Exception as e:
         logger.error(f"Error summarizing technical skills: {e}")
         return f"Error summarizing technical skills: {str(e)}"
@@ -84,13 +106,26 @@ def search_and_recommend_jobs(query: str, limit: int = 5) -> str:
     Returns:
         JSON string with keys: query, results, ai_recommendation.
     """
+    start_time = time.perf_counter()
+    logger.info(
+        "Tool search_and_recommend_jobs: start",
+        extra={"limit": limit, "query_preview": (query[:120] + "..." if len(query) > 120 else query)}
+    )
     import json
     session = None
     try:
         session = SessionLocal()
         recommender = JobRecommender()
         result = recommender.search_and_recommend(query=query, db=session, limit=limit)
-        return json.dumps(result, ensure_ascii=False, default=str)
+        payload = json.dumps(result, ensure_ascii=False, default=str)
+        logger.info(
+            "Tool search_and_recommend_jobs: success",
+            extra={
+                "results_count": len(result.get("results", [])),
+                "duration_ms": int((time.perf_counter()-start_time)*1000)
+            }
+        )
+        return payload
     except Exception as e:
         logger.error(f"Error in search_and_recommend_jobs: {e}")
         return f"Error in search_and_recommend_jobs: {str(e)}"
@@ -109,13 +144,26 @@ def search_and_recommend_cvs(query: str, limit: int = 5) -> str:
     Returns:
         JSON string with keys: query, results, ai_recommendation.
     """
+    start_time = time.perf_counter()
+    logger.info(
+        "Tool search_and_recommend_cvs: start",
+        extra={"limit": limit, "query_preview": (query[:120] + "..." if len(query) > 120 else query)}
+    )
     import json
     session = None
     try:
         session = SessionLocal()
         recommender = CVRecommender()
         result = recommender.search_and_recommend(query=query, db=session, limit=limit)
-        return json.dumps(result, ensure_ascii=False, default=str)
+        payload = json.dumps(result, ensure_ascii=False, default=str)
+        logger.info(
+            "Tool search_and_recommend_cvs: success",
+            extra={
+                "results_count": len(result.get("results", [])),
+                "duration_ms": int((time.perf_counter()-start_time)*1000)
+            }
+        )
+        return payload
     except Exception as e:
         logger.error(f"Error in search_and_recommend_cvs: {e}")
         return f"Error in search_and_recommend_cvs: {str(e)}"
