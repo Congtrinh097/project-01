@@ -3,6 +3,7 @@ import json
 from langchain_core.tools import tool
 from database import SessionLocal
 from models import Job
+from .job_recommender import JobRecommender
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,31 @@ def get_jobs_summary_by_technical_skills(top_n: int = 20) -> str:
     except Exception as e:
         logger.error(f"Error summarizing technical skills: {e}")
         return f"Error summarizing technical skills: {str(e)}"
+    finally:
+        if session is not None:
+            session.close()
+
+@tool
+def search_and_recommend_jobs(query: str, limit: int = 5) -> str:
+    """Search and recommend jobs using semantic similarity and AI summary.
+
+    Args:
+        query: User search text or brief CV/profile summary.
+        limit: Max number of job results to include.
+
+    Returns:
+        JSON string with keys: query, results, ai_recommendation.
+    """
+    import json
+    session = None
+    try:
+        session = SessionLocal()
+        recommender = JobRecommender()
+        result = recommender.search_and_recommend(query=query, db=session, limit=limit)
+        return json.dumps(result, ensure_ascii=False, default=str)
+    except Exception as e:
+        logger.error(f"Error in search_and_recommend_jobs: {e}")
+        return f"Error in search_and_recommend_jobs: {str(e)}"
     finally:
         if session is not None:
             session.close()
