@@ -11,6 +11,8 @@ from langgraph.prebuilt import ToolNode
 from langchain_core.tools import tool
 from langchain_core.messages import SystemMessage, HumanMessage
 from config import settings
+from database import SessionLocal
+from models import Job
 
 logger = logging.getLogger(__name__)
 
@@ -24,16 +26,6 @@ class MainBot:
     Provide clear, accurate, and helpful responses to user questions.
     If you use tools to gather information, synthesize the results into a coherent answer.
     Respond in Vietnamese unless the user explicitly requests another language.
-    
-    IMPORTANT: Format your responses using Markdown for better readability:
-    - Use **bold** for emphasis
-    - Use *italic* for subtle emphasis
-    - Use ### Headers for main topics
-    - Use - or * for bullet points
-    - Use 1. 2. 3. for numbered lists
-    - Use `code` for technical terms or commands
-    - Use > blockquotes for important notes
-    - Use --- for horizontal separators when needed
     
     This will make your responses more visually appealing and easier to read."""
     
@@ -150,11 +142,83 @@ class MainBot:
             logger.warning("TAVILY_API_KEY not found, Tavily search disabled")
             self.tavily_tool = None
         
+        # Jobs tools: database-derived utilities
+        @tool
+        def get_total_jobs_count() -> str:
+            """Returns the total number of jobs in the database as text."""
+            session = None
+            try:
+                session = SessionLocal()
+                total = session.query(Job).count()
+                return str(total)
+            except Exception as e:
+                logger.error(f"Error counting jobs: {e}")
+                return f"Error counting jobs: {str(e)}"
+            finally:
+                if session is not None:
+                    session.close()
+
+        @tool
+        def get_jobs_summary_by_technical_skills(top_n: int = 20) -> str:
+            """Returns JSON with counts of jobs per technical skill.
+
+            Args:
+                top_n: Maximum number of skills to return, sorted by count desc.
+            """
+            import json
+            session = None
+            try:
+                session = SessionLocal()
+                rows = session.query(Job.technical_skills).all()
+
+                skill_to_count = {}
+                total_jobs = len(rows)
+
+                for (skills,) in rows:
+                    if not skills:
+                        continue
+                    if isinstance(skills, list):
+                        iterable = skills
+                    else:
+                        # Unexpected type; skip safely
+                        iterable = []
+                    for skill in iterable:
+                        if not skill:
+                            continue
+                        key = str(skill).strip().lower()
+                        if not key:
+                            continue
+                        skill_to_count[key] = skill_to_count.get(key, 0) + 1
+
+                sorted_counts = sorted(skill_to_count.items(), key=lambda kv: kv[1], reverse=True)
+                if isinstance(top_n, int) and top_n > 0:
+                    sorted_counts = sorted_counts[:top_n]
+
+                payload = {
+                    "total_jobs": total_jobs,
+                    "skills_count": [
+                        {"skill": name, "count": count} for name, count in sorted_counts
+                    ],
+                }
+                return json.dumps(payload, ensure_ascii=False)
+            except Exception as e:
+                logger.error(f"Error summarizing technical skills: {e}")
+                return f"Error summarizing technical skills: {str(e)}"
+            finally:
+                if session is not None:
+                    session.close()
+
         # Store tools
         self.retrieve_advice_tool = retrieve_advice
+        self.get_total_jobs_count_tool = get_total_jobs_count
+        self.get_jobs_summary_by_technical_skills_tool = get_jobs_summary_by_technical_skills
         
         # Tools list for LLM
-        tools = [retrieve_advice]
+        tools = [
+            retrieve_advice,
+            get_total_jobs_count,
+            get_jobs_summary_by_technical_skills,
+        ]
         if self.tavily_tool:
             tools.append(self.tavily_tool)
         
