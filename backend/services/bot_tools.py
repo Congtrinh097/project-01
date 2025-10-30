@@ -4,6 +4,7 @@ from langchain_core.tools import tool
 from database import SessionLocal
 from models import Job
 from .job_recommender import JobRecommender
+from .cv_recommender import CVRecommender
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +94,31 @@ def search_and_recommend_jobs(query: str, limit: int = 5) -> str:
     except Exception as e:
         logger.error(f"Error in search_and_recommend_jobs: {e}")
         return f"Error in search_and_recommend_jobs: {str(e)}"
+    finally:
+        if session is not None:
+            session.close()
+
+@tool
+def search_and_recommend_cvs(query: str, limit: int = 5) -> str:
+    """Search and recommend CVs or candidates using semantic similarity and AI summary.
+
+    Args:
+        query: Search text (skills/role/requirements) to match candidate CVs.
+        limit: Max number of CV results to include.
+
+    Returns:
+        JSON string with keys: query, results, ai_recommendation.
+    """
+    import json
+    session = None
+    try:
+        session = SessionLocal()
+        recommender = CVRecommender()
+        result = recommender.search_and_recommend(query=query, db=session, limit=limit)
+        return json.dumps(result, ensure_ascii=False, default=str)
+    except Exception as e:
+        logger.error(f"Error in search_and_recommend_cvs: {e}")
+        return f"Error in search_and_recommend_cvs: {str(e)}"
     finally:
         if session is not None:
             session.close()

@@ -15,6 +15,7 @@ from .bot_tools import (
     get_total_jobs_count,
     get_jobs_summary_by_technical_skills,
     search_and_recommend_jobs,
+    search_and_recommend_cvs,
 )
 
 logger = logging.getLogger(__name__)
@@ -156,6 +157,7 @@ class MainBot:
             get_total_jobs_count,
             get_jobs_summary_by_technical_skills,
             search_and_recommend_jobs,
+            search_and_recommend_cvs,
         ]
         if self.tavily_tool:
             tools.append(self.tavily_tool)
