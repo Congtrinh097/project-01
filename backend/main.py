@@ -707,16 +707,24 @@ async def chat_with_audio(request: ChatRequest):
             conversation_history=conversation_history
         )
         
-        # Generate audio response using Piper TTS
+        # Generate audio response using OpenAI TTS
         audio_data = None
-        if piper_tts.is_available():
+        logger.info(f"Checking chatbot TTS availability: {chatbot.is_tts_available()}")
+        if chatbot.is_tts_available():
             try:
                 # Clean markdown formatting for TTS
                 clean_text = clean_markdown_for_tts(response_text)
-                audio_data = piper_tts.synthesize_speech(clean_text, language="vi")
-                logger.info("✅ Generated audio response")
+                logger.info(f"Cleaned text for TTS: {len(clean_text)} characters")
+                # Use OpenAI TTS with voice "nova" (good for Vietnamese/English)
+                audio_data = chatbot.generate_audio(clean_text, voice="nova", model="tts-1")
+                if audio_data:
+                    logger.info(f"✅ Generated audio response for Chatbot using OpenAI TTS: {len(audio_data)} bytes")
+                else:
+                    logger.warning("⚠️ OpenAI TTS returned None")
             except Exception as e:
-                logger.warning(f"⚠️ Failed to generate audio: {e}")
+                logger.error(f"⚠️ Failed to generate audio for Chatbot: {e}", exc_info=True)
+        else:
+            logger.warning("⚠️ OpenAI TTS is not available for Chatbot")
         
         # Return response with both text and audio
         response_data = {
@@ -725,6 +733,8 @@ async def chat_with_audio(request: ChatRequest):
             "has_audio": audio_data is not None,
             "audio_data": audio_data.hex() if audio_data else None
         }
+        
+        logger.info(f"Chatbot response data: has_audio={response_data['has_audio']}, audio_data_length={len(response_data['audio_data']) if response_data['audio_data'] else 0}")
         
         return response_data
         
@@ -737,10 +747,12 @@ async def chat_with_audio(request: ChatRequest):
 
 @app.get("/chatbot/tts-status")
 async def tts_status():
-    """Check TTS service status"""
+    """Check TTS service status for Chatbot"""
     return {
-        "available": piper_tts.is_available(),
-        "languages": piper_tts.get_available_languages()
+        "available": chatbot.is_tts_available(),
+        "provider": "openai",
+        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+        "models": ["tts-1", "tts-1-hd"]
     }
 
 
@@ -818,16 +830,24 @@ async def main_bot_chat_with_audio(request: MainBotRequest):
             conversation_history=conversation_history
         )
         
-        # Generate audio response using Piper TTS
+        # Generate audio response using OpenAI TTS
         audio_data = None
-        if piper_tts.is_available():
+        logger.info(f"Checking TTS availability: {main_bot.is_tts_available()}")
+        if main_bot.is_tts_available():
             try:
                 # Clean markdown formatting for TTS
                 clean_text = clean_markdown_for_tts(response_text)
-                audio_data = piper_tts.synthesize_speech(clean_text, language="vi")
-                logger.info("✅ Generated audio response for Main Bot")
+                logger.info(f"Cleaned text for TTS: {len(clean_text)} characters")
+                # Use OpenAI TTS with voice "nova" (good for Vietnamese/English)
+                audio_data = main_bot.generate_audio(clean_text, voice="nova", model="tts-1")
+                if audio_data:
+                    logger.info(f"✅ Generated audio response for Main Bot using OpenAI TTS: {len(audio_data)} bytes")
+                else:
+                    logger.warning("⚠️ OpenAI TTS returned None")
             except Exception as e:
-                logger.warning(f"⚠️ Failed to generate audio for Main Bot: {e}")
+                logger.error(f"⚠️ Failed to generate audio for Main Bot: {e}", exc_info=True)
+        else:
+            logger.warning("⚠️ OpenAI TTS is not available")
         
         # Return response with both text and audio
         response_data = {
@@ -836,6 +856,8 @@ async def main_bot_chat_with_audio(request: MainBotRequest):
             "has_audio": audio_data is not None,
             "audio_data": audio_data.hex() if audio_data else None
         }
+        
+        logger.info(f"Response data: has_audio={response_data['has_audio']}, audio_data_length={len(response_data['audio_data']) if response_data['audio_data'] else 0}")
         
         return response_data
         
@@ -863,8 +885,10 @@ async def main_bot_health_check():
 async def main_bot_tts_status():
     """Check TTS service status for Main Bot"""
     return {
-        "available": piper_tts.is_available(),
-        "languages": piper_tts.get_available_languages()
+        "available": main_bot.is_tts_available(),
+        "provider": "openai",
+        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+        "models": ["tts-1", "tts-1-hd"]
     }
 
 

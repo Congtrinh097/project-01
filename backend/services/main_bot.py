@@ -1,6 +1,7 @@
 import os
 import logging
 from typing import List, Dict, Optional
+from openai import OpenAI
 from langchain_openai import ChatOpenAI
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_openai import OpenAIEmbeddings
@@ -47,6 +48,7 @@ class MainBot:
             self.db = None
             self.retriever = None
             self.graph = None
+            self.tts_client = None
         else:
             try:
                 # Initialize OpenAI client
@@ -65,6 +67,16 @@ class MainBot:
                         temperature=self.temperature,
                         api_key=self.api_key
                     )
+                
+                # Initialize OpenAI TTS client
+                # Note: Always use standard OpenAI API endpoint for TTS, even if base_url is set
+                # Some custom endpoints may not support audio.speech API
+                try:
+                    self.tts_client = OpenAI(api_key=self.api_key)
+                    logger.info("Initialized OpenAI TTS client with standard API endpoint")
+                except Exception as e:
+                    logger.warning(f"Failed to initialize OpenAI TTS client: {e}")
+                    self.tts_client = None
                 
                 # Initialize embedding model
                 if self.base_url:
@@ -92,6 +104,7 @@ class MainBot:
                 self.db = None
                 self.retriever = None
                 self.graph = None
+                self.tts_client = None
     
     def _initialize_knowledge_base(self):
         """Initialize FAISS vector store with knowledge base chunks"""
@@ -262,4 +275,69 @@ class MainBot:
         except Exception as e:
             logger.error(f"Error getting Main Bot response: {str(e)}")
             return f"Xin lỗi, tôi gặp lỗi khi xử lý câu hỏi của bạn: {str(e)}"
+    
+    def generate_audio(self, text: str, voice: str = "alloy", model: str = "tts-1") -> Optional[bytes]:
+        """
+        Generate audio from text using OpenAI TTS API
+        
+        Args:
+            text: Text to convert to speech
+            voice: Voice to use ("alloy", "echo", "fable", "onyx", "nova", "shimmer")
+            model: Model to use ("tts-1" or "tts-1-hd")
+        
+        Returns:
+            Audio data as bytes (MP3 format) or None if failed
+        """
+        if not self.tts_client:
+            logger.warning("TTS client not initialized")
+            return None
+        
+        if not text or not text.strip():
+            logger.warning("Empty text provided to generate_audio")
+            return None
+        
+        try:
+            logger.info(f"Calling OpenAI TTS API: model={model}, voice={voice}, text_length={len(text)}")
+            response = self.tts_client.audio.speech.create(
+                model=model,
+                voice=voice,
+                input=text,
+                response_format="mp3"
+            )
+            
+            if not response:
+                logger.error("OpenAI TTS returned None response")
+                return None
+            
+            # Get audio data - response.content should be bytes
+            if hasattr(response, 'content'):
+                audio_data = response.content
+            elif hasattr(response, 'read'):
+                # If it's a stream, read it
+                audio_data = response.read()
+            else:
+                logger.error(f"OpenAI TTS response format unexpected: {type(response)}")
+                return None
+            
+            if not audio_data:
+                logger.error("OpenAI TTS returned empty audio data")
+                return None
+            
+            # Ensure it's bytes
+            if isinstance(audio_data, str):
+                audio_data = audio_data.encode('utf-8')
+            elif not isinstance(audio_data, bytes):
+                logger.error(f"OpenAI TTS returned unexpected type: {type(audio_data)}")
+                return None
+            
+            logger.info(f"✅ Generated audio using OpenAI TTS: {len(text)} characters -> {len(audio_data)} bytes")
+            return audio_data
+            
+        except Exception as e:
+            logger.error(f"Error generating audio with OpenAI TTS: {e}", exc_info=True)
+            return None
+    
+    def is_tts_available(self) -> bool:
+        """Check if OpenAI TTS is available"""
+        return self.tts_client is not None
 
