@@ -100,8 +100,7 @@ function ChatbotTab() {
       const bytes = new Uint8Array(
         audioData.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
       );
-      // OpenAI TTS returns MP3 format, piper_tts returns WAV
-      // Chatbot now uses OpenAI TTS, so use MP3 format
+      // OpenAI TTS returns MP3 format
       const blob = new Blob([bytes], { type: "audio/mpeg" });
       const audioUrl = URL.createObjectURL(blob);
 

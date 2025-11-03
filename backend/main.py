@@ -19,7 +19,6 @@ from services.main_bot import MainBot
 from services.cv_recommender import CVRecommender
 from services.job_extractor import JobExtractor
 from services.job_recommender import JobRecommender
-from services.piper_tts import piper_tts
 from config import settings
 import re
 

@@ -105,8 +105,7 @@ function MainBotTab() {
       const bytes = new Uint8Array(
         audioData.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
       );
-      // OpenAI TTS returns MP3 format, piper_tts returns WAV
-      // Try MP3 first (OpenAI), fallback to WAV (Piper)
+      // OpenAI TTS returns MP3 format
       const blob = new Blob([bytes], { type: "audio/mpeg" });
       const audioUrl = URL.createObjectURL(blob);
 
