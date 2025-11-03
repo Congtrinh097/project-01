@@ -1,9 +1,11 @@
 import os
 import logging
+import time
 from typing import List, Dict, Optional
 from openai import OpenAI
 from langchain_openai import ChatOpenAI
 from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_core.tools import StructuredTool
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
@@ -146,17 +148,47 @@ class MainBot:
                 logger.error(f"Error retrieving from knowledge base: {e}")
                 return f"Error searching knowledge base: {str(e)}"
         
-        # Tavily search tool (requires TAVILY_API_KEY)
+        # Tavily search tool (optional, requires TAVILY_API_KEY)
         tavily_api_key = settings.TAVILY_API_KEY
         if tavily_api_key:
             try:
-                self.tavily_tool = TavilySearchResults(max_results=3, api_key=tavily_api_key)
-                logger.info("Tavily search tool initialized")
+                tavily_base = TavilySearchResults(max_results=3, api_key=tavily_api_key)
+                
+                # Create a wrapper with logging
+                def tavily_search_with_logging(query: str):
+                    """Search the web using Tavily API with logging"""
+                    start_time = time.time()
+                    logger.info(f"Tavily search: start - query='{query[:100]}'")
+                    try:
+                        result = tavily_base.invoke(query)
+                        duration_ms = int((time.time() - start_time) * 1000)
+                        result_count = len(result) if isinstance(result, list) else 1
+                        logger.info(
+                            f"Tavily search: success - query_length={len(query)}, "
+                            f"results_count={result_count}, duration_ms={duration_ms}"
+                        )
+                        return result
+                    except Exception as e:
+                        duration_ms = int((time.time() - start_time) * 1000)
+                        logger.error(
+                            f"Tavily search: error - query='{query[:100]}', "
+                            f"error={str(e)}, duration_ms={duration_ms}"
+                        )
+                        raise
+                
+                # Create StructuredTool wrapper
+                self.tavily_tool = StructuredTool(
+                    name=tavily_base.name,
+                    description=tavily_base.description,
+                    func=tavily_search_with_logging,
+                    args_schema=tavily_base.args_schema if hasattr(tavily_base, 'args_schema') else None,
+                )
+                logger.info("Tavily search tool initialized successfully with logging")
             except Exception as e:
                 logger.warning(f"Failed to initialize Tavily tool: {e}")
                 self.tavily_tool = None
         else:
-            logger.warning("TAVILY_API_KEY not found, Tavily search disabled")
+            logger.debug("TAVILY_API_KEY not found, Tavily search disabled (optional feature)")
             self.tavily_tool = None
         
         # Store tools
