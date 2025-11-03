@@ -32,8 +32,6 @@ services:
       - CHATBOT_TEMPERATURE=${CHATBOT_TEMPERATURE:-0.7}
       - CHATBOT_MAX_HISTORY=${CHATBOT_MAX_HISTORY:-10}
       - UPLOAD_DIR=/tmp/uploads
-      - HF_TOKEN=${HF_TOKEN}
-      - HF_MODEL_NAME=${HF_MODEL_NAME:-meta-llama/Llama-3.1-8B}
       - TAVILY_API_KEY=${TAVILY_API_KEY:-}
     volumes:
       - ./backend:/app

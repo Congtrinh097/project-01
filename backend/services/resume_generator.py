@@ -1,7 +1,7 @@
 """
 resume_generator.py
 
-Service for generating professional resumes using Hugging Face (via Featherless AI) or Mock mode.
+Service for generating professional resumes using OpenAI API or Mock mode.
 Supports text input and structured profile JSON.
 
 Author: AI Assistant
@@ -13,67 +13,64 @@ import json
 import textwrap
 import logging
 from typing import Optional, Dict, Any
+from openai import OpenAI
 from config import settings
 
 logger = logging.getLogger(__name__)
 
-# Optional: Try to import HuggingFace InferenceClient
-try:
-    from huggingface_hub import InferenceClient
-    _HF_AVAILABLE = True
-except Exception:
-    _HF_AVAILABLE = False
 
-
-class HuggingFaceModel:
+class OpenAIModel:
     """
-    Wrapper around Hugging Face InferenceClient using Featherless AI provider.
+    Wrapper around OpenAI API for text generation.
     Provides generate_text(prompt, ...) -> str
     """
 
-    def __init__(self, model_name: str = settings.HF_MODEL_NAME):
-        self.model_name = model_name
+    def __init__(self, model_name: str = None):
+        self.api_key = settings.OPENAI_API_KEY
+        self.base_url = settings.OPENAI_BASE_URL
+        self.model_name = model_name or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
         self._client = None
 
-        if not _HF_AVAILABLE:
+        if not self.api_key:
             raise RuntimeError(
-                "huggingface_hub is not installed. Install with: pip install huggingface_hub"
-            )
-
-        hf_token = settings.HF_TOKEN
-        if not hf_token:
-            raise RuntimeError(
-                "HF_TOKEN environment variable not set. Please set your Hugging Face API token."
+                "OPENAI_API_KEY environment variable not set. Please set your OpenAI API key."
             )
 
         try:
-            # Initialize the InferenceClient with token
-            # Note: For Featherless AI, the token should be your Featherless API key
-            self._client = InferenceClient(token=hf_token)
-            logger.info(f"[HuggingFaceModel] Initialized InferenceClient with model: {model_name}")
+            if self.base_url:
+                self._client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+            else:
+                self._client = OpenAI(api_key=self.api_key)
+            logger.info(f"[OpenAIModel] Initialized OpenAI client with model: {self.model_name}")
         except Exception as e:
-            raise RuntimeError(f"Failed to initialize Hugging Face client: {e}")
+            raise RuntimeError(f"Failed to initialize OpenAI client: {e}")
 
-    def generate_text(self, prompt: str, max_tokens: int = 512, temperature: float = 0.2) -> str:
+    def generate_text(self, prompt: str, max_tokens: int = 800, temperature: float = 0.2) -> str:
         """
-        Generate text using the Hugging Face model.
+        Generate text using the OpenAI API.
         Returns the generated string.
         """
         if self._client is None:
-            raise RuntimeError("Hugging Face client not initialized.")
+            raise RuntimeError("OpenAI client not initialized.")
+        
         try:
-            result = self._client.text_generation(
-                prompt,
+            logger.info(f"Generating resume text with OpenAI: model={self.model_name}, max_tokens={max_tokens}")
+            response = self._client.chat.completions.create(
                 model=self.model_name,
-                max_new_tokens=max_tokens,
+                messages=[
+                    {"role": "system", "content": "You are a professional resume writer. Generate clean, concise, and ATS-friendly resumes."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=max_tokens,
                 temperature=temperature,
             )
             
+            result = response.choices[0].message.content
             if isinstance(result, str):
                 return result.strip()
             return str(result).strip()
         except Exception as e:
-            logger.error(f"Error during text generation: {e}")
+            logger.error(f"Error during OpenAI text generation: {e}")
             raise RuntimeError(f"Error during text generation: {e}")
 
 
@@ -190,24 +187,22 @@ class ResumeGenerator:
 
     def __init__(self):
         """
-        Initialize the resume generator with either Hugging Face or Mock model
+        Initialize the resume generator with either OpenAI or Mock model
         """
         self.model = None
         self._initialize_model()
 
     def _initialize_model(self):
-        """Initialize the appropriate model (Hugging Face or Mock)"""
-        model_name = os.environ.get("HF_MODEL_NAME", "meta-llama/Llama-3.1-8B")
-        
+        """Initialize the appropriate model (OpenAI or Mock)"""
         try:
-            if _HF_AVAILABLE and settings.HF_TOKEN:
-                logger.info("Attempting to load Hugging Face model...")
-                self.model = HuggingFaceModel(model_name=model_name)
-                logger.info(f"Hugging Face model loaded successfully: {model_name}")
+            if settings.OPENAI_API_KEY:
+                logger.info("Attempting to load OpenAI model...")
+                self.model = OpenAIModel()
+                logger.info("OpenAI model loaded successfully")
             else:
-                raise RuntimeError("Hugging Face not available or HF_TOKEN not set")
+                raise RuntimeError("OpenAI not available or OPENAI_API_KEY not set")
         except Exception as e:
-            logger.warning(f"Hugging Face initialization failed: {e}")
+            logger.warning(f"OpenAI initialization failed: {e}")
             logger.info("Falling back to MockLlamaModel")
             self.model = MockLlamaModel()
 
