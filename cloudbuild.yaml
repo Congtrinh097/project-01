@@ -35,7 +35,7 @@ steps:
       - "--allow-unauthenticated"
       - "--add-cloudsql-instances=$_CLOUD_SQL_CONNECTION_NAME"
       - "--set-env-vars=DB_USER=postgres,DB_NAME=cv_analyzer,CLOUD_SQL_CONNECTION_NAME=$_CLOUD_SQL_CONNECTION_NAME,FRONTEND_URL=*"
-      - "--set-secrets=DB_PASSWORD=db-password:latest,OPENAI_API_KEY=openai-api-key:latest,OPENAI_EMBED_API_KEY=openai-embed-api-key:latest"
+      - "--set-secrets=DB_PASSWORD=db-password:latest,OPENAI_API_KEY=openai-api-key:latest,OPENAI_EMBED_API_KEY=openai-embed-api-key:latest,TAVILY_API_KEY=tavily-api-key:latest"
       - "--memory=1Gi"
       - "--cpu=1"
       - "--timeout=300"

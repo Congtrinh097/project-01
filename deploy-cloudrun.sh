@@ -86,8 +86,20 @@ if ! gcloud secrets describe db-password &> /dev/null; then
     SECRET_MISSING=true
 fi
 
+if ! gcloud secrets describe openai-embed-api-key &> /dev/null; then
+    print_error "Secret 'openai-embed-api-key' not found. Please create it first:"
+    echo "  echo -n 'YOUR_API_KEY' | gcloud secrets create openai-embed-api-key --data-file=-"
+    SECRET_MISSING=true
+fi
+
+# Optional secrets
+if ! gcloud secrets describe tavily-api-key &> /dev/null; then
+    print_error "Secret 'tavily-api-key' not found (optional for web search). Create it:"
+    echo "  echo -n 'YOUR_API_KEY' | gcloud secrets create tavily-api-key --data-file=-"
+fi
+
 if [ "$SECRET_MISSING" = true ]; then
-    print_error "Please create missing secrets and run this script again"
+    print_error "Please create missing required secrets and run this script again"
     exit 1
 fi
 
@@ -163,6 +175,15 @@ print_success "Backend image built and pushed"
 
 # Deploy backend
 print_step "Deploying backend to Cloud Run..."
+# Build secrets list
+SECRETS="DB_PASSWORD=db-password:latest,OPENAI_API_KEY=openai-api-key:latest,OPENAI_EMBED_API_KEY=openai-embed-api-key:latest"
+
+# Add optional TAVILY_API_KEY if secret exists
+if gcloud secrets describe tavily-api-key &> /dev/null; then
+    SECRETS="$SECRETS,TAVILY_API_KEY=tavily-api-key:latest"
+    print_success "Tavily API key secret found, will be included in deployment"
+fi
+
 gcloud run deploy cv-analyzer-backend \
     --image ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY_NAME}/backend:latest \
     --platform managed \
@@ -170,7 +191,7 @@ gcloud run deploy cv-analyzer-backend \
     --allow-unauthenticated \
     --add-cloudsql-instances $CLOUD_SQL_CONNECTION_NAME \
     --set-env-vars="DB_USER=postgres,DB_NAME=$DB_NAME,CLOUD_SQL_CONNECTION_NAME=$CLOUD_SQL_CONNECTION_NAME,FRONTEND_URL=*" \
-    --set-secrets="DB_PASSWORD=db-password:latest,OPENAI_API_KEY=openai-api-key:latest,OPENAI_EMBED_API_KEY=openai-embed-api-key:latest" \
+    --set-secrets="$SECRETS" \
     --memory 1Gi \
     --cpu 1 \
     --timeout 300 \
