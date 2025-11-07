@@ -1,14 +1,29 @@
-import React from 'react'
-import { FileText, CheckCircle, AlertCircle, Trash2 } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
+import { AlertCircle, CheckCircle, FileText, Trash2 } from "lucide-react";
+import React, { useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import { trackCVView } from "../utils/analytics";
 
-function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect, onDeleteCV, isDeleting }) {
+function HistoryTab({
+  cvs,
+  cvsLoading,
+  selectedCV,
+  onCVSelect,
+  onDeleteCV,
+  isDeleting,
+}) {
+  // Track CV view when selected CV changes
+  useEffect(() => {
+    if (selectedCV) {
+      trackCVView(selectedCV.id);
+    }
+  }, [selectedCV]);
+
   if (cvsLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -16,9 +31,13 @@ function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect, onDeleteCV, isDel
       {/* CV List */}
       <div className="lg:col-span-1">
         <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Uploaded CVs</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Uploaded CVs
+          </h3>
           {cvs.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No CVs uploaded yet</p>
+            <p className="text-gray-500 text-center py-8">
+              No CVs uploaded yet
+            </p>
           ) : (
             <div className="space-y-3">
               {cvs.map((cv) => (
@@ -27,8 +46,8 @@ function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect, onDeleteCV, isDel
                   onClick={() => onCVSelect(cv.id)}
                   className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                     selectedCV?.id === cv.id
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? "border-purple-500 bg-purple-50"
+                      : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -70,7 +89,7 @@ function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect, onDeleteCV, isDel
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Analysis for: {selectedCV.filename}
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Strengths */}
                 <div>
@@ -81,7 +100,7 @@ function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect, onDeleteCV, isDel
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div className="markdown-content">
                       <ReactMarkdown>
-                        {selectedCV.summary_pros || 'No strengths identified.'}
+                        {selectedCV.summary_pros || "No strengths identified."}
                       </ReactMarkdown>
                     </div>
                   </div>
@@ -91,12 +110,15 @@ function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect, onDeleteCV, isDel
                 <div>
                   <div className="flex items-center mb-3">
                     <AlertCircle className="h-5 w-5 text-orange-500 mr-2" />
-                    <h4 className="font-medium text-gray-900">Areas for Improvement</h4>
+                    <h4 className="font-medium text-gray-900">
+                      Areas for Improvement
+                    </h4>
                   </div>
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                     <div className="markdown-content">
                       <ReactMarkdown>
-                        {selectedCV.summary_cons || 'No areas for improvement identified.'}
+                        {selectedCV.summary_cons ||
+                          "No areas for improvement identified."}
                       </ReactMarkdown>
                     </div>
                   </div>
@@ -107,7 +129,9 @@ function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect, onDeleteCV, isDel
         ) : (
           <div className="card p-8 text-center">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Select a CV to view analysis</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Select a CV to view analysis
+            </h3>
             <p className="text-gray-500">
               Choose a CV from the list to see its detailed analysis
             </p>
@@ -115,7 +139,7 @@ function HistoryTab({ cvs, cvsLoading, selectedCV, onCVSelect, onDeleteCV, isDel
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default HistoryTab
+export default HistoryTab;

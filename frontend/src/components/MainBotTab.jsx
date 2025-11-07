@@ -7,6 +7,7 @@ import {
   sendMainBotMessage,
   sendMainBotMessageWithAudio,
 } from "../services/api";
+import { trackChatbotMessage } from "../utils/analytics";
 
 function MainBotTab() {
   const [messages, setMessages] = useState([]);
@@ -155,6 +156,9 @@ function MainBotTab() {
 
         setMessages((prev) => [...prev, newMessage]);
         setIsTyping(false);
+
+        // Track main bot message
+        trackChatbotMessage("main-bot");
 
         // Auto-play audio if available and TTS is enabled
         if (data.has_audio && data.audio_data && ttsEnabled) {

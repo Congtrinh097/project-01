@@ -205,8 +205,10 @@ print_success "Backend deployed: $BACKEND_URL"
 # Build and push frontend
 print_step "Building and pushing frontend image..."
 cd frontend
+GA_MEASUREMENT_ID=${VITE_GA_MEASUREMENT_ID:-""}
 docker build \
     --build-arg VITE_API_URL=$BACKEND_URL \
+    --build-arg VITE_GA_MEASUREMENT_ID=$GA_MEASUREMENT_ID \
     -f Dockerfile.cloudrun \
     -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY_NAME}/frontend:latest .
 

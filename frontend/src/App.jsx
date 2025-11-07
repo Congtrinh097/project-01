@@ -36,6 +36,14 @@ import JobsTab from "./components/JobsTab";
 import MainBotTab from "./components/MainBotTab";
 import RecommendTab from "./components/RecommendTab";
 import UploadTab from "./components/UploadTab";
+import {
+  trackCVDelete,
+  trackCVRecommend,
+  trackCVUpload,
+  trackJobRecommend,
+  trackResumeGenerate,
+  trackTabChange,
+} from "./utils/analytics";
 
 function App() {
   const [activeTab, setActiveTab] = useState("main-bot");
@@ -55,15 +63,19 @@ function App() {
   );
 
   const uploadMutation = useMutation(uploadCV, {
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries("cvs");
       setActiveTab("history");
+      // Track CV upload
+      trackCVUpload(data.filename || "unknown", data.file_size || 0);
     },
   });
 
   const deleteMutation = useMutation(deleteCV, {
-    onSuccess: () => {
+    onSuccess: (data, cvId) => {
       queryClient.invalidateQueries("cvs");
+      // Track CV delete
+      trackCVDelete(cvId);
       // Clear selected CV if it was deleted
       if (selectedCV) {
         setSelectedCV(null);
@@ -75,6 +87,8 @@ function App() {
     onSuccess: (data) => {
       queryClient.invalidateQueries("resumes");
       setSelectedResume(data);
+      // Track resume generation
+      trackResumeGenerate();
     },
   });
 
@@ -90,8 +104,10 @@ function App() {
   const recommendMutation = useMutation(
     ({ query, limit }) => recommendCVs(query, limit),
     {
-      onSuccess: (data) => {
+      onSuccess: (data, variables) => {
         setRecommendResults(data);
+        // Track CV recommendation
+        trackCVRecommend(variables.query.length, data.results?.length || 0);
       },
     }
   );
@@ -99,8 +115,10 @@ function App() {
   const jobRecommendMutation = useMutation(
     ({ query, limit }) => recommendJobs(query, limit),
     {
-      onSuccess: (data) => {
+      onSuccess: (data, variables) => {
         setJobRecommendResults(data);
+        // Track job recommendation
+        trackJobRecommend(variables.query.length, data.results?.length || 0);
       },
     }
   );
@@ -110,6 +128,8 @@ function App() {
     {
       onSuccess: (data) => {
         setJobRecommendResults(data);
+        // Track job recommendation from CV
+        trackJobRecommend(0, data.results?.length || 0); // 0 query length for CV-based
       },
     }
   );
@@ -176,6 +196,8 @@ function App() {
     setActiveTab(tab);
     setIsMobileMenuOpen(false); // Close mobile menu on tab change
     setIsCVMenuOpen(false); // Close CV dropdown on tab change
+    // Track tab change
+    trackTabChange(tab);
   };
 
   const handleCVMenuToggle = () => {

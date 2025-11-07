@@ -10,6 +10,7 @@ import {
 import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { downloadCV } from "../services/api";
+import { trackDownloadCV } from "../utils/analytics";
 
 const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
   const [query, setQuery] = useState("");
@@ -182,6 +183,7 @@ const RecommendTab = ({ onRecommend, isLoading, error, results }) => {
                               <a
                                 href={downloadCV(result.id)}
                                 download
+                                onClick={() => trackDownloadCV(result.id)}
                                 className="inline-flex items-center text-xs text-purple-600 hover:text-purple-800 hover:underline"
                                 title="Download CV"
                               >

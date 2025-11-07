@@ -6,6 +6,7 @@ import {
   sendChatMessage,
   sendChatMessageWithAudio,
 } from "../services/api";
+import { trackChatbotMessage } from "../utils/analytics";
 
 function ChatbotTab() {
   const [messages, setMessages] = useState([]);
@@ -150,6 +151,9 @@ function ChatbotTab() {
 
         setMessages((prev) => [...prev, newMessage]);
         setIsTyping(false);
+
+        // Track chatbot message
+        trackChatbotMessage("interview-chatbot");
 
         // Auto-play audio if available and TTS is enabled
         if (data.has_audio && data.audio_data && ttsEnabled) {

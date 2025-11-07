@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 import { downloadResume } from "../services/api";
+import { trackDownloadResume } from "../utils/analytics";
 
 function GenerateResumeTab({
   generateMutation,
@@ -142,6 +143,7 @@ function GenerateResumeTab({
                 <a
                   href={downloadResume(selectedResume.id)}
                   download
+                  onClick={() => trackDownloadResume(selectedResume.id)}
                   className="flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
                 >
                   <Download className="h-4 w-4 mr-2" />

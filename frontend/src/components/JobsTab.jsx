@@ -9,9 +9,15 @@ import {
   Tag,
   Trash2,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "react-query";
 import { deleteJob, getJob, getJobs, searchJobs } from "../services/api";
+import {
+  trackJobDelete,
+  trackJobFilter,
+  trackJobSearch,
+  trackJobView,
+} from "../utils/analytics";
 
 const JobsTab = () => {
   const [selectedJob, setSelectedJob] = useState(null);
@@ -44,9 +50,11 @@ const JobsTab = () => {
   );
 
   const deleteJobMutation = useMutation(deleteJob, {
-    onSuccess: () => {
+    onSuccess: (data, jobId) => {
       queryClient.invalidateQueries("jobs");
       queryClient.invalidateQueries("jobs-search");
+      // Track job delete
+      trackJobDelete(jobId);
       if (selectedJob) {
         setSelectedJob(null);
       }
@@ -57,6 +65,8 @@ const JobsTab = () => {
     try {
       const job = await getJob(jobId);
       setSelectedJob(job);
+      // Track job view
+      trackJobView(jobId);
     } catch (error) {
       console.error("Error fetching job details:", error);
     }
@@ -71,11 +81,22 @@ const JobsTab = () => {
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    // Track job filter
+    if (value) {
+      trackJobFilter(key, value);
+    }
   };
 
   const clearFilters = () => {
     setFilters({ company: "", location: "", working_type: "" });
   };
+
+  // Track job search
+  useEffect(() => {
+    if (searchQuery.length > 2 && searchResults.length > 0) {
+      trackJobSearch(searchQuery.length, searchResults.length);
+    }
+  }, [searchQuery, searchResults]);
 
   const displayJobs = searchQuery.length > 2 ? searchResults : jobs;
   const isLoading = searchQuery.length > 2 ? searchLoading : jobsLoading;
