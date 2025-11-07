@@ -14,7 +14,7 @@ from services.cv_analyzer import CVAnalyzer
 from services.file_processor import FileProcessor
 from services.resume_generator import ResumeGenerator
 from services.pdf_generator import PDFGenerator
-from services.chatbot import InterviewChatbot
+from services.interview_bot import InterviewChatbot
 from services.main_bot import MainBot
 from services.cv_recommender import CVRecommender
 from services.job_extractor import JobExtractor
