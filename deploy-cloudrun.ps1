@@ -225,14 +225,30 @@ if ($CLOUD_SQL_CONNECTION_NAME) {
 $BACKEND_URL = gcloud run services describe cv-analyzer-backend --region $REGION --format="value(status.url)"
 Print-Success "Backend deployed: $BACKEND_URL"
 
+# Prepare Google Analytics measurement ID for frontend build
+$GA_MEASUREMENT_ID = $env:VITE_GA_MEASUREMENT_ID
+if (-not $GA_MEASUREMENT_ID) {
+    $GA_MEASUREMENT_ID = Read-Host "Enter Google Analytics Measurement ID (leave blank to skip)"
+}
+
+if ($GA_MEASUREMENT_ID) {
+    Print-Success "Using Google Analytics Measurement ID: $GA_MEASUREMENT_ID"
+} else {
+    Write-Host "Google Analytics Measurement ID not provided; analytics will be disabled." -ForegroundColor Yellow
+}
+
 # Build and push frontend
 Print-Step "Building and pushing frontend image..."
 Push-Location frontend
 try {
-    docker build `
-        --build-arg VITE_API_URL=$BACKEND_URL `
-        -f Dockerfile.cloudrun `
-        -t "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY_NAME}/frontend:latest" .
+    $dockerBuildArgs = @()
+    $dockerBuildArgs += @("--build-arg", "VITE_API_URL=$BACKEND_URL")
+    if ($GA_MEASUREMENT_ID) {
+        $dockerBuildArgs += @("--build-arg", "VITE_GA_MEASUREMENT_ID=$GA_MEASUREMENT_ID")
+    }
+    $dockerBuildArgs += @("-f", "Dockerfile.cloudrun", "-t", "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY_NAME}/frontend:latest", ".")
+
+    docker build $dockerBuildArgs
     if ($LASTEXITCODE -ne 0) { throw "Docker build failed" }
     
     docker push "${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY_NAME}/frontend:latest"
