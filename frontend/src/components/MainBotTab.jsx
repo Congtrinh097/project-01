@@ -420,17 +420,34 @@ function MainBotTab() {
                                 </h3>
                               ),
                               ul: ({ children }) => (
-                                <ul className="list-disc list-inside mb-2 space-y-1">
+                                <ul className="list-disc list-outside mb-2 space-y-1">
                                   {children}
                                 </ul>
                               ),
                               ol: ({ children }) => (
-                                <ol className="list-decimal list-inside mb-2 space-y-1">
+                                <ol className="list-decimal list-outside mb-2 space-y-1">
                                   {children}
                                 </ol>
                               ),
                               li: ({ children }) => (
-                                <li className="text-sm">{children}</li>
+                                <li className="text-sm leading-relaxed">
+                                  {React.Children.map(
+                                    children,
+                                    (child, idx) => {
+                                      if (
+                                        React.isValidElement(child) &&
+                                        child.type === "p"
+                                      ) {
+                                        return (
+                                          <span key={idx} className="inline">
+                                            {child.props.children}
+                                          </span>
+                                        );
+                                      }
+                                      return child;
+                                    }
+                                  )}
+                                </li>
                               ),
                               code: ({ children }) => (
                                 <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">
@@ -441,6 +458,20 @@ function MainBotTab() {
                                 <pre className="bg-gray-100 p-2 rounded text-xs font-mono overflow-x-auto mb-2">
                                   {children}
                                 </pre>
+                              ),
+                              a: ({ href, children }) => (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={
+                                    message.role === "user"
+                                      ? "text-blue-200 underline hover:text-blue-100"
+                                      : "text-blue-600 underline hover:text-blue-700"
+                                  }
+                                >
+                                  {children}
+                                </a>
                               ),
                               blockquote: ({ children }) => (
                                 <blockquote className="border-l-4 border-blue-300 pl-3 italic mb-2">
