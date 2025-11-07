@@ -319,30 +319,32 @@ function MainBotTab() {
                 </button>
                 <button
                   onClick={() =>
-                    setInputMessage("Làm thế nào để tạo một CV chuyên nghiệp?")
-                  }
-                  className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
-                >
-                  <p className="text-sm sm:text-base font-medium text-gray-900">
-                    Tạo CV
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-500">
-                    Hướng dẫn tạo CV chuyên nghiệp
-                  </p>
-                </button>
-                <button
-                  onClick={() =>
                     setInputMessage(
-                      "Các kỹ năng cần thiết cho vị trí Software Engineer"
+                      "Tìm giúp tôi top 5 CV Frontend Engineer hơn 2 năm kinh nghiệm"
                     )
                   }
                   className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
                 >
                   <p className="text-sm sm:text-base font-medium text-gray-900">
-                    Kỹ năng IT
+                    Top 5 CV
                   </p>
                   <p className="text-xs sm:text-sm text-gray-500">
-                    Tìm hiểu kỹ năng cần thiết
+                    Top 5 CV Frontend Engineer...
+                  </p>
+                </button>
+                <button
+                  onClick={() =>
+                    setInputMessage(
+                      "Top 5 Công việc cho lập trình viên lương hơn 1000$"
+                    )
+                  }
+                  className="px-3 py-2 sm:px-4 sm:py-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
+                >
+                  <p className="text-sm sm:text-base font-medium text-gray-900">
+                    Top 5 Công việc
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    Top 5 công việc IT hấp dẫn
                   </p>
                 </button>
                 <button
@@ -389,7 +391,13 @@ function MainBotTab() {
                         />
                       )}
                       <div className="flex-1">
-                        <div className="prose prose-sm sm:prose-base max-w-none break-words">
+                        <div
+                          className={`prose prose-sm sm:prose-base max-w-none break-words ${
+                            message.role === "user"
+                              ? "prose-invert text-white"
+                              : "text-gray-800"
+                          }`}
+                        >
                           <ReactMarkdown
                             components={{
                               // Custom styling for markdown elements
