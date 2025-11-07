@@ -27,7 +27,7 @@ export const initGA = (measurementId) => {
     send_page_view: false, // We'll track page views manually
   });
 
-  console.log("Google Analytics initialized:", measurementId);
+  // console.log("Google Analytics initialized:", measurementId);
 };
 
 // Track page view

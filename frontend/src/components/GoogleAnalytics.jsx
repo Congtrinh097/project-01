@@ -7,10 +7,7 @@ function GoogleAnalytics() {
   useEffect(() => {
     // Initialize GA on mount
     if (GA_MEASUREMENT_ID) {
-      console.log(
-        "🔵 Initializing Google Analytics with ID:",
-        GA_MEASUREMENT_ID
-      );
+      console.log("🔵 Initializing Google Analytics");
       initGA(GA_MEASUREMENT_ID);
       // Track initial page view
       trackPageView(window.location.pathname);
