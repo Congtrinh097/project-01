@@ -1,173 +1,113 @@
 /**
  * Google Analytics 4 Integration
+ * DISABLED - All functions are no-ops
  * Tracks page views and custom events
  */
 
-// Initialize Google Analytics
+// Initialize Google Analytics - DISABLED
 export const initGA = (measurementId) => {
-  if (!measurementId || typeof window === "undefined") {
-    return;
-  }
-
-  // Load gtag script
-  const script1 = document.createElement("script");
-  script1.async = true;
-  script1.src = `https://www.googletagmanager.com/gtag/js?id=${measurementId}`;
-  document.head.appendChild(script1);
-
-  // Initialize gtag
-  window.dataLayer = window.dataLayer || [];
-  function gtag() {
-    window.dataLayer.push(arguments);
-  }
-  window.gtag = gtag;
-
-  gtag("js", new Date());
-  gtag("config", measurementId, {
-    send_page_view: false, // We'll track page views manually
-  });
-
-  // console.log("Google Analytics initialized:", measurementId);
+  // Google Analytics is disabled
+  return;
 };
 
-// Track page view
+// Track page view - DISABLED
 export const trackPageView = (path) => {
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", "page_view", {
-      page_path: path || window.location.pathname,
-      page_title: document.title,
-    });
-  }
+  // Google Analytics is disabled
+  return;
 };
 
-// Track custom event
+// Track custom event - DISABLED
 export const trackEvent = (eventName, eventParams = {}) => {
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", eventName, eventParams);
-  }
+  // Google Analytics is disabled
+  return;
 };
 
-// Track CV upload
+// Track CV upload - DISABLED
 export const trackCVUpload = (filename, fileSize) => {
-  trackEvent("cv_upload", {
-    event_category: "CV Management",
-    event_label: filename,
-    value: fileSize,
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track CV delete
+// Track CV delete - DISABLED
 export const trackCVDelete = (cvId) => {
-  trackEvent("cv_delete", {
-    event_category: "CV Management",
-    event_label: `CV-${cvId}`,
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track resume generation
+// Track resume generation - DISABLED
 export const trackResumeGenerate = () => {
-  trackEvent("resume_generate", {
-    event_category: "Resume Management",
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track tab navigation
+// Track tab navigation - DISABLED
 export const trackTabChange = (tabName) => {
-  trackEvent("tab_change", {
-    event_category: "Navigation",
-    event_label: tabName,
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track job recommendation
+// Track job recommendation - DISABLED
 export const trackJobRecommend = (queryLength, resultsCount) => {
-  trackEvent("job_recommend", {
-    event_category: "Job Search",
-    value: resultsCount,
-    query_length: queryLength,
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track CV recommendation
+// Track CV recommendation - DISABLED
 export const trackCVRecommend = (queryLength, resultsCount) => {
-  trackEvent("cv_recommend", {
-    event_category: "CV Search",
-    value: resultsCount,
-    query_length: queryLength,
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track chatbot message
+// Track chatbot message - DISABLED
 export const trackChatbotMessage = (botType = "chatbot") => {
-  trackEvent("chatbot_message", {
-    event_category: "Chat",
-    event_label: botType,
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track error
+// Track error - DISABLED
 export const trackError = (errorType, errorMessage) => {
-  trackEvent("exception", {
-    event_category: "Error",
-    event_label: errorType,
-    description: errorMessage,
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track job view
+// Track job view - DISABLED
 export const trackJobView = (jobId) => {
-  trackEvent("job_view", {
-    event_category: "Jobs",
-    event_label: `Job-${jobId}`,
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track job search
+// Track job search - DISABLED
 export const trackJobSearch = (queryLength, resultsCount) => {
-  trackEvent("job_search", {
-    event_category: "Jobs",
-    value: resultsCount,
-    query_length: queryLength,
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track job delete
+// Track job delete - DISABLED
 export const trackJobDelete = (jobId) => {
-  trackEvent("job_delete", {
-    event_category: "Jobs",
-    event_label: `Job-${jobId}`,
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track job filter
+// Track job filter - DISABLED
 export const trackJobFilter = (filterType, filterValue) => {
-  trackEvent("job_filter", {
-    event_category: "Jobs",
-    event_label: filterType,
-    value: filterValue,
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track CV view (in History tab)
+// Track CV view (in History tab) - DISABLED
 export const trackCVView = (cvId) => {
-  trackEvent("cv_view", {
-    event_category: "CV Management",
-    event_label: `CV-${cvId}`,
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track download CV
+// Track download CV - DISABLED
 export const trackDownloadCV = (cvId) => {
-  trackEvent("download_cv", {
-    event_category: "CV Management",
-    event_label: `CV-${cvId}`,
-  });
+  // Google Analytics is disabled
+  return;
 };
 
-// Track download resume
+// Track download resume - DISABLED
 export const trackDownloadResume = (resumeId) => {
-  trackEvent("download_resume", {
-    event_category: "Resume Management",
-    event_label: `Resume-${resumeId}`,
-  });
+  // Google Analytics is disabled
+  return;
 };
