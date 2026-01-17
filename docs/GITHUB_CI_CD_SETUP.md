@@ -57,6 +57,7 @@ Go to your GitHub repository: **Settings → Secrets and variables → Actions �
 Add the following secrets:
 
 ### 1. GCP_SA_KEY (Required)
+
 - **Name:** `GCP_SA_KEY`
 - **Value:** Contents of `github-actions-key.json` file (the entire JSON)
 - **How to get:** Copy the entire contents of `github-actions-key.json` file
@@ -72,6 +73,7 @@ type github-actions-key.json
 ```
 
 ### 2. CLOUD_SQL_CONNECTION_NAME (Required)
+
 - **Name:** `CLOUD_SQL_CONNECTION_NAME`
 - **Value:** `cv-analyzer-tlstudio:us-central1:cv-analyzer-db`
 - **How to get:**
@@ -80,6 +82,7 @@ type github-actions-key.json
   ```
 
 ### 3. VITE_GA_MEASUREMENT_ID (Optional)
+
 - **Name:** `VITE_GA_MEASUREMENT_ID`
 - **Value:** Your Google Analytics Measurement ID (e.g., `G-XXXXXXXXXX`)
 - **Note:** Leave empty if you don't use Google Analytics
@@ -89,6 +92,7 @@ type github-actions-key.json
 Ensure the workflow file exists at `.github/workflows/deploy.yml` in your repository root.
 
 The workflow will:
+
 1. Trigger on pushes to `main`/`master` branch
 2. Trigger on PR merges to `main`/`master` branch
 3. Build and push Docker images for backend and frontend
@@ -112,6 +116,7 @@ git push origin main
 ### Option B: Merge a Pull Request
 
 1. Create a new branch:
+
    ```bash
    git checkout -b test/deployment-trigger
    echo "# Test PR deployment" >> README.md
@@ -167,18 +172,21 @@ gcloud run services describe cv-analyzer-backend \
 ### Triggers
 
 The workflow triggers on:
+
 - **Push** to `main` or `master` branch
 - **Pull Request** merged into `main` or `master` branch
 
 ### Build Process
 
 1. **Backend:**
+
    - Builds Docker image from `backend/Dockerfile.cloudrun`
    - Tags with `latest` and commit SHA
    - Pushes to Artifact Registry
    - Deploys to Cloud Run with secrets and environment variables
 
 2. **Frontend:**
+
    - Gets backend URL from deployed service
    - Builds Docker image from `frontend/Dockerfile.cloudrun`
    - Includes backend URL as build argument
@@ -199,7 +207,7 @@ Edit `.github/workflows/deploy.yml`:
 on:
   push:
     branches:
-      - production  # Change to your target branch
+      - production # Change to your target branch
 ```
 
 ### Deploy Only Frontend
@@ -209,6 +217,7 @@ Create a separate workflow file (e.g., `.github/workflows/deploy-frontend.yml`) 
 ### Add Additional Steps
 
 You can add steps like:
+
 - Running tests before deployment
 - Sending deployment notifications
 - Running database migrations
@@ -233,6 +242,7 @@ Example:
 ### Issue: Workflow not triggering
 
 **Solution:**
+
 - Ensure workflow file is in `.github/workflows/` directory
 - Check that the branch name matches (`main` or `master`)
 - Verify file syntax is correct (YAML)
@@ -240,6 +250,7 @@ Example:
 ### Issue: Authentication failed
 
 **Solution:**
+
 - Verify `GCP_SA_KEY` secret is correctly set (full JSON content)
 - Check service account has necessary permissions
 - Ensure service account key hasn't expired
@@ -247,6 +258,7 @@ Example:
 ### Issue: Build fails
 
 **Solution:**
+
 - Check Dockerfile syntax
 - Verify all required files are in repository
 - Check build logs in GitHub Actions
@@ -254,6 +266,7 @@ Example:
 ### Issue: Deployment fails
 
 **Solution:**
+
 - Verify Cloud Run service names are correct
 - Check that secrets exist in Secret Manager
 - Ensure service account has `run.admin` permission
@@ -262,6 +275,7 @@ Example:
 ### Issue: CORS errors after deployment
 
 **Solution:**
+
 - Verify frontend URL is correctly set in backend
 - Check backend logs for CORS configuration
 - Ensure `FRONTEND_URL` environment variable is set
@@ -292,6 +306,7 @@ Example:
 To remove the CI/CD setup:
 
 1. Delete the workflow file:
+
    ```bash
    rm .github/workflows/deploy.yml
    ```
@@ -299,6 +314,7 @@ To remove the CI/CD setup:
 2. Remove GitHub secrets (optional, if not used elsewhere)
 
 3. Delete service account (optional):
+
    ```bash
    gcloud iam service-accounts delete github-actions-deployer@cv-analyzer-tlstudio.iam.gserviceaccount.com
    ```
@@ -307,4 +323,3 @@ To remove the CI/CD setup:
    ```bash
    rm github-actions-key.json
    ```
-
