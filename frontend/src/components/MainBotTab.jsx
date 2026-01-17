@@ -241,23 +241,25 @@ function MainBotTab() {
     <div className="max-w-7xl mx-auto h-full">
       <div className="card overflow-hidden flex flex-col h-[calc(100vh-7rem)] sm:h-[calc(100vh-8rem)] lg:h-[calc(100vh-9rem)]">
         {/* Chat Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 sm:p-6 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center">
-              <Bot className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 flex-shrink-0" />
-              <div>
-                <h2 className="text-lg sm:text-2xl font-bold">Main Bot</h2>
-                <p className="text-blue-100 text-xs sm:text-sm mt-1">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-2 sm:p-6 flex-shrink-0">
+          <div className="flex flex-row items-center justify-between gap-2 sm:gap-3">
+            <div className="flex items-center flex-1 min-w-0">
+              <Bot className="h-5 w-5 sm:h-8 sm:w-8 mr-2 sm:mr-3 flex-shrink-0" />
+              <div className="min-w-0">
+                <h2 className="text-base sm:text-2xl font-bold truncate">
+                  Main Bot
+                </h2>
+                <p className="hidden sm:block text-blue-100 text-xs sm:text-sm mt-1">
                   Trợ lý AI thông minh với khả năng tìm kiếm thông tin - Hỏi bất
                   cứ điều gì
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
               {/* TTS Toggle */}
               <button
                 onClick={() => setTtsEnabled(!ttsEnabled)}
-                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                className={`px-2 py-1 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                   ttsEnabled
                     ? "bg-white bg-opacity-20 hover:bg-opacity-30"
                     : "bg-white bg-opacity-10 hover:bg-opacity-20"
@@ -275,9 +277,10 @@ function MainBotTab() {
               {messages.length > 0 && (
                 <button
                   onClick={handleClearChat}
-                  className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-xs sm:text-sm font-medium transition-colors"
+                  className="px-2 py-1 sm:px-4 sm:py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-xs sm:text-sm font-medium transition-colors"
                 >
-                  Xóa cuộc trò chuyện
+                  <span className="hidden sm:inline">Xóa cuộc trò chuyện</span>
+                  <span className="sm:hidden">Xóa</span>
                 </button>
               )}
             </div>
@@ -285,7 +288,7 @@ function MainBotTab() {
         </div>
 
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-2 sm:p-6 space-y-2 sm:space-y-4 bg-gray-50">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-4">
               <Bot className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mb-3 sm:mb-4" />
@@ -374,7 +377,7 @@ function MainBotTab() {
                   }`}
                 >
                   <div
-                    className={`max-w-[85%] sm:max-w-2xl lg:max-w-3xl rounded-lg px-3 py-2 sm:px-4 sm:py-3 ${
+                    className={`max-w-[95%] sm:max-w-2xl lg:max-w-3xl rounded-lg px-2 py-1.5 sm:px-4 sm:py-3 ${
                       message.role === "user"
                         ? "bg-blue-600 text-white"
                         : message.isError
@@ -385,14 +388,14 @@ function MainBotTab() {
                     <div className="flex items-start">
                       {message.role === "assistant" && (
                         <Bot
-                          className={`h-4 w-4 sm:h-5 sm:w-5 mr-2 flex-shrink-0 mt-0.5 ${
+                          className={`h-3 w-3 sm:h-5 sm:w-5 mr-1.5 sm:mr-2 flex-shrink-0 mt-0.5 ${
                             message.isError ? "text-red-500" : "text-blue-600"
                           }`}
                         />
                       )}
                       <div className="flex-1">
                         <div
-                          className={`prose prose-sm sm:prose-base max-w-none break-words ${
+                          className={`prose prose-sm sm:prose-base max-w-none break-words leading-relaxed ${
                             message.role === "user"
                               ? "prose-invert text-white"
                               : "text-gray-800"
@@ -568,12 +571,12 @@ function MainBotTab() {
         </div>
 
         {/* Chat Input */}
-        <div className="border-t border-gray-200 bg-white p-3 sm:p-6 flex-shrink-0">
+        <div className="border-t border-gray-200 bg-white p-2 sm:p-6 flex-shrink-0">
           <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto">
             <div className="relative">
               <div className="flex items-center bg-white border border-gray-200 rounded-full shadow-sm hover:shadow-md transition-shadow duration-200">
                 {/* Text Input */}
-                <div className="flex-1 px-3 sm:px-6">
+                <div className="flex-1 px-2 sm:px-6">
                   <input
                     ref={inputRef}
                     type="text"
@@ -600,7 +603,7 @@ function MainBotTab() {
                   type="button"
                   onClick={handleVoiceInput}
                   disabled={chatMutation.isLoading}
-                  className={`p-2 sm:p-3 transition-colors duration-200 rounded-full ${
+                  className={`p-1.5 sm:p-3 transition-colors duration-200 rounded-full ${
                     isListening
                       ? "bg-red-100 text-red-600 animate-pulse"
                       : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
@@ -620,7 +623,7 @@ function MainBotTab() {
                 <button
                   type="submit"
                   disabled={!inputMessage.trim() || chatMutation.isLoading}
-                  className={`ml-1 sm:ml-2 mr-1 sm:mr-2 p-2 sm:p-3 rounded-full transition-all duration-200 flex items-center justify-center ${
+                  className={`ml-1 sm:ml-2 mr-1 sm:mr-2 p-1.5 sm:p-3 rounded-full transition-all duration-200 flex items-center justify-center ${
                     inputMessage.trim() && !chatMutation.isLoading
                       ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg"
                       : "bg-gray-100 text-gray-400 cursor-not-allowed"
