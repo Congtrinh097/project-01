@@ -1,0 +1,156 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - master
+
+env:
+  PROJECT_ID: cv-analyzer-tlstudio
+  REGION: us-central1
+  REPOSITORY_NAME: cv-analyzer-repo
+  BACKEND_SERVICE: cv-analyzer-backend
+  FRONTEND_SERVICE: cv-analyzer-frontend
+
+jobs:
+  deploy:
+    # Only deploy when PR is merged (not just closed)
+    if: github.event.pull_request.merged == true || (github.event_name == 'push' && github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Get backend URL
+        id: get-backend-url
+        run: |
+          BACKEND_URL=$(gcloud run services describe ${{ env.BACKEND_SERVICE }} \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)' || echo "")
+          if [ -z "$BACKEND_URL" ]; then
+            echo "Backend service not found, will use default URL"
+            BACKEND_URL="https://cv-analyzer-backend-ds3onpywlq-uc.a.run.app"
+          fi
+          echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_OUTPUT
+          echo "Backend URL: $BACKEND_URL"
+
+      # Build and push backend
+      - name: Build and push backend image
+        working-directory: ./backend
+        run: |
+          docker build \
+            -f Dockerfile.cloudrun \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/backend:latest \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/backend:${{ github.sha }} \
+            .
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/backend:latest
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/backend:${{ github.sha }}
+
+      # Deploy backend
+      - name: Deploy backend to Cloud Run
+        id: deploy-backend
+        run: |
+          gcloud run deploy ${{ env.BACKEND_SERVICE }} \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/backend:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --add-cloudsql-instances ${{ secrets.CLOUD_SQL_CONNECTION_NAME }} \
+            --set-env-vars="DB_USER=postgres,DB_NAME=cv_analyzer,CLOUD_SQL_CONNECTION_NAME=${{ secrets.CLOUD_SQL_CONNECTION_NAME }},FRONTEND_URL=*" \
+            --set-secrets="DB_PASSWORD=db-password:latest,OPENAI_API_KEY=openai-api-key:latest,OPENAI_EMBED_API_KEY=openai-embed-api-key:latest" \
+            --memory 1Gi \
+            --cpu 1 \
+            --timeout 300 \
+            --max-instances 10 \
+            --min-instances 0 \
+            --quiet
+
+      - name: Get new backend URL
+        id: get-new-backend-url
+        run: |
+          BACKEND_URL=$(gcloud run services describe ${{ env.BACKEND_SERVICE }} \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          echo "BACKEND_URL=$BACKEND_URL" >> $GITHUB_OUTPUT
+          echo "New Backend URL: $BACKEND_URL"
+
+      # Build and push frontend
+      - name: Build and push frontend image
+        working-directory: ./frontend
+        env:
+          VITE_API_URL: ${{ steps.get-new-backend-url.outputs.BACKEND_URL }}
+          VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
+        run: |
+          docker build \
+            --build-arg VITE_API_URL=${{ env.VITE_API_URL }} \
+            --build-arg VITE_GA_MEASUREMENT_ID=${{ env.VITE_GA_MEASUREMENT_ID }} \
+            -f Dockerfile.cloudrun \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/frontend:latest \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/frontend:${{ github.sha }} \
+            .
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/frontend:latest
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/frontend:${{ github.sha }}
+
+      # Deploy frontend
+      - name: Deploy frontend to Cloud Run
+        id: deploy-frontend
+        run: |
+          gcloud run deploy ${{ env.FRONTEND_SERVICE }} \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY_NAME }}/frontend:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 512Mi \
+            --cpu 1 \
+            --max-instances 10 \
+            --min-instances 0 \
+            --quiet
+
+      - name: Get frontend URL
+        id: get-frontend-url
+        run: |
+          FRONTEND_URL=$(gcloud run services describe ${{ env.FRONTEND_SERVICE }} \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          echo "FRONTEND_URL=$FRONTEND_URL" >> $GITHUB_OUTPUT
+          echo "Frontend URL: $FRONTEND_URL"
+
+      # Update backend CORS
+      - name: Update backend CORS settings
+        run: |
+          gcloud run services update ${{ env.BACKEND_SERVICE }} \
+            --region ${{ env.REGION }} \
+            --set-env-vars="FRONTEND_URL=${{ steps.get-frontend-url.outputs.FRONTEND_URL }}" \
+            --quiet
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Frontend URL:** ${{ steps.get-frontend-url.outputs.FRONTEND_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Backend URL:** ${{ steps.get-new-backend-url.outputs.BACKEND_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY

@@ -112,3 +112,8 @@ models/
 backend/outputs/resumes/
 backend/outputs/analyses/
 
+# Google Cloud service account keys
+github-actions-key.json
+*-key.json
+*-sa-key.json
+
